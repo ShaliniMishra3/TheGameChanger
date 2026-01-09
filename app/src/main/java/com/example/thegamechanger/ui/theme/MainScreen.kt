@@ -1,14 +1,11 @@
 package com.example.thegamechanger.ui.theme
 
-import android.widget.Space
-import android.widget.TableRow
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,11 +15,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,12 +40,16 @@ import androidx.compose.ui.unit.sp
 import com.example.thegamechanger.viewmodel.Player
 
 @Composable
-fun MainScreen() {
+fun MainScreen(
+    onAddPersonClick:()->Unit
+) {
     //---- STATE ----
     var gameStarted by remember { mutableStateOf(false) }
     var winAmount by remember { mutableStateOf("") }
     val SubmitOrangeStart = Color(0xFFEF8F1F) // rich dark orange
     val SubmitOrangeEnd = Color(0xFFD97706)   // deep burnt orange
+    var showExitDialog by remember { mutableStateOf(false) }
+    var selectedPlayer by remember { mutableStateOf<Player?>(null) }
 
     val players = remember {
         mutableStateListOf(
@@ -79,14 +82,12 @@ fun MainScreen() {
             fontWeight = FontWeight.Bold,
             color = PokerBlack
         )
-
-         */
+       */
         Row(
             modifier = Modifier
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             // Dealer Name (Left)
             Text(
                 text = "Dealer: Roopesh",
@@ -95,7 +96,6 @@ fun MainScreen() {
                 color = PokerBlack,
                 modifier = Modifier.weight(1f)
             )
-
             // Plus Button (Right)
             Box(
                 modifier = Modifier
@@ -105,7 +105,7 @@ fun MainScreen() {
                         shape = RoundedCornerShape(10.dp)
                     )
                     .clickable {
-                        // TODO: plus button action
+                       onAddPersonClick()
                     },
                 contentAlignment = Alignment.Center
             ) {
@@ -117,16 +117,17 @@ fun MainScreen() {
                 )
             }
         }
-
-
-
         Spacer(modifier = Modifier.height(20.dp))
-
         // ---------- PREMIUM TABLE ----------
-        PremiumTable(players)
-
+        //PremiumTable(players)
+        PremiumTable(
+            players = players,
+            onExitClick = { player ->
+                selectedPlayer = player
+                showExitDialog = true
+            }
+        )
         Spacer(modifier = Modifier.height(28.dp))
-
         // ---------- BUTTONS ----------
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -173,9 +174,7 @@ fun MainScreen() {
                 fontWeight = FontWeight.SemiBold
             )
             Spacer(modifier = Modifier.height(12.dp))
-
             val isValidAmount = winAmount.isNotEmpty() && winAmount.toIntOrNull() != null
-
             OutlinedTextField(
                 value = winAmount,
                 onValueChange = { winAmount = it },
@@ -249,6 +248,20 @@ fun MainScreen() {
 
 
         }
+
+        if(showExitDialog && selectedPlayer!=null){
+            ExitDialog(
+                player=selectedPlayer!!,
+                onDismiss={showExitDialog=false},
+                onSubmit={remainingAmount ->
+                    val index=players.indexOfFirst { it.name ==selectedPlayer!!.name }
+                    if(index!=-1){
+                        players[index]=players[index].copy(amount=remainingAmount)
+                    }
+                    showExitDialog=false
+                }
+            )
+        }
     }
 }
 
@@ -256,9 +269,10 @@ fun MainScreen() {
    PREMIUM TABLE UI
 -------------------------------------------------- */
 
-
 @Composable
-fun PremiumTable(players: List<Player>) {
+fun PremiumTable(
+    players: List<Player>,
+    onExitClick:(Player)->Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
@@ -317,7 +331,8 @@ fun PremiumTable(players: List<Player>) {
                 PremiumTableRow(
                     name = player.name,
                     amount = "₹${player.amount}",
-                    isLast = index == players.lastIndex
+                    isLast = index == players.lastIndex,
+                    onExitClick= {onExitClick(player)}
                 )
             }
         }
@@ -327,7 +342,9 @@ fun PremiumTable(players: List<Player>) {
 fun PremiumTableRow(
     name: String,
     amount: String,
-    isLast: Boolean
+    isLast: Boolean,
+    onExitClick: () -> Unit
+
 ) {
     Column {
         Row(
@@ -353,7 +370,9 @@ fun PremiumTableRow(
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF1E88E5),
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable{onExitClick()},
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
 
             )
@@ -364,7 +383,9 @@ fun PremiumTableRow(
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color.Gray,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable{onExitClick()},
                 textAlign = androidx.compose.ui.text.style.TextAlign.End
 
             )
@@ -376,6 +397,119 @@ fun PremiumTableRow(
                 thickness = 1.dp,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ExitDialog(
+    player: Player,
+    onDismiss: () -> Unit,
+    onSubmit: (Int) -> Unit
+) {
+    var remaining by remember { mutableStateOf(player.amount.toString()) }
+
+    BasicAlertDialog(
+        onDismissRequest = onDismiss
+    ) {
+        Card(
+            shape = RoundedCornerShape(22.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = PokerBlack
+            ),
+            elevation = CardDefaults.cardElevation(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.Start
+            ) {
+
+                // ---- TITLE ----
+                Text(
+                    text = "Exit Player",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = PokerWhite
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = "Player : ${player.name}",
+                    fontSize = 14.sp,
+                    color = PokerGray
+                )
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                // ---- INPUT ----
+                OutlinedTextField(
+                    value = remaining,
+                    onValueChange = { remaining = it },
+                    label = {
+                        Text("Remaining Coins", color = PokerGray)
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    colors = androidx.compose.material3.TextFieldDefaults.colors(
+                        focusedTextColor = PokerWhite,
+                        unfocusedTextColor = PokerWhite,
+                        cursorColor = PokerWhite,
+
+                        focusedIndicatorColor = PokerWhite,
+                        unfocusedIndicatorColor = PokerGray,
+
+                        focusedLabelColor = PokerWhite,
+                        unfocusedLabelColor = PokerGray,
+
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent
+                    )
+                    ,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(22.dp))
+
+                // ---- ACTIONS ----
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
+                    Text(
+                        text = "Cancel",
+                        color = PokerGray,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier
+                            .clickable { onDismiss() }
+                            .padding(end = 16.dp)
+                    )
+
+                    Button(
+                        onClick = {
+                            val amount = remaining.toIntOrNull() ?: return@Button
+                            onSubmit(amount)
+                        },
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = PokerOrangeTop,
+                            contentColor = PokerBlack
+                        )
+                    ) {
+                        Text(
+                            text = "Submit",
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                }
+            }
         }
     }
 }

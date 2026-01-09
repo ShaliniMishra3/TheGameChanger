@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.thegamechanger.ui.theme.AddPersonScreen
 import com.example.thegamechanger.ui.theme.IntroScreen
 import com.example.thegamechanger.ui.theme.LoginScreen
 import com.example.thegamechanger.ui.theme.MainScreen
@@ -35,7 +36,19 @@ fun AppNavGraph(){
             )
         }
         composable("main") {
-            MainScreen()
+            MainScreen(
+                onAddPersonClick = {
+                    navController.navigate("add_person")
+                }
+            )
         }
+
+        // 🔥 THIS WAS MISSING
+        composable("add_person") {
+            AddPersonScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
     }
 }
