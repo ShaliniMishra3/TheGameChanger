@@ -22,6 +22,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -61,7 +62,7 @@ fun AddPersonScreen(
             verticalAlignment = Alignment.CenterVertically
         ){
             Text(
-                text="Add Person",
+                text="Add Player ",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.ExtraBold,
                 modifier = Modifier.weight(1f)
@@ -117,7 +118,7 @@ fun DealerRow(
             verticalAlignment = Alignment.CenterVertically
         ){
             Text(
-                text="Dealer $dealerName",
+                text="Player $dealerName",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f)
@@ -142,7 +143,6 @@ fun AddDealerDialog(
     onAdd:(String)->Unit
 ){
     var name by remember { mutableStateOf("") }
-
     BasicAlertDialog(onDismissRequest = onDismiss) {
         Card(
             shape = RoundedCornerShape(20.dp),
@@ -150,19 +150,17 @@ fun AddDealerDialog(
             modifier = Modifier.padding(24.dp)
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
-
                 Text(
-                    text = "Add Dealer",
+                    text = "Waiting Player",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = PokerWhite
                 )
-
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Dealer Name") },
+                    label = { Text("Amount") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     colors = androidx.compose.material3.TextFieldDefaults.colors(
@@ -180,25 +178,32 @@ fun AddDealerDialog(
                 Spacer(modifier = Modifier.height(22.dp))
                 Row(
                     horizontalArrangement = Arrangement.End,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Cancel",
-                        color = PokerGray,
-                        modifier = Modifier
-                            .clickable { onDismiss() }
-                            .padding(end = 16.dp)
+                    TextButton(
+                        onClick = { onDismiss() }
                     )
-                    Button(
-                        onClick = {
-                            if (name.isNotBlank()) onAdd(name)
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = PokerOrangeTop,
-                            contentColor = PokerBlack
+                    {
+                        Text(
+                            text = "Cancel",
+                            color = PokerGray,
+                            modifier = Modifier
+                                .clickable { onDismiss() }
+                                .padding(end = 16.dp)
                         )
-                    ) {
-                        Text("Add", fontWeight = FontWeight.Bold)
+                        Button(
+                            onClick = {
+                                if (name.isNotBlank()) onAdd(name)
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = PokerOrangeTop,
+                                contentColor = PokerBlack
+                            )
+                        ) {
+                            Text("Add", fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }

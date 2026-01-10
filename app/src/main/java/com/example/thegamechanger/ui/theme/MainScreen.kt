@@ -1,5 +1,6 @@
 package com.example.thegamechanger.ui.theme
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -41,16 +42,23 @@ import com.example.thegamechanger.viewmodel.Player
 
 @Composable
 fun MainScreen(
-    onAddPersonClick:()->Unit
+    onAddPersonClick:()->Unit,
+    onBack:()->Unit
 ) {
     //---- STATE ----
     var gameStarted by remember { mutableStateOf(false) }
+    var gameCompleted by remember { mutableStateOf(false) }
+
+
     var winAmount by remember { mutableStateOf("") }
     val SubmitOrangeStart = Color(0xFFEF8F1F) // rich dark orange
     val SubmitOrangeEnd = Color(0xFFD97706)   // deep burnt orange
     var showExitDialog by remember { mutableStateOf(false) }
     var selectedPlayer by remember { mutableStateOf<Player?>(null) }
 
+    BackHandler {
+        onBack()
+    }
     val players = remember {
         mutableStateListOf(
             Player("Ram", 5000),
@@ -58,7 +66,6 @@ fun MainScreen(
             Player("Rahul", 2500),
             Player("Neha", 8000),
             Player("Dealer", 15000)
-
         )
     }
     Column(
@@ -75,20 +82,11 @@ fun MainScreen(
             .padding(16.dp)
     ) {
         Spacer(modifier = Modifier.height(50.dp))
-        /*
-        Text(
-            text = "Dealer:Roopesh",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = PokerBlack
-        )
-       */
         Row(
             modifier = Modifier
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Dealer Name (Left)
             Text(
                 text = "Dealer: Roopesh",
                 fontSize = 24.sp,
@@ -96,7 +94,6 @@ fun MainScreen(
                 color = PokerBlack,
                 modifier = Modifier.weight(1f)
             )
-            // Plus Button (Right)
             Box(
                 modifier = Modifier
                     .size(38.dp)
@@ -153,12 +150,12 @@ fun MainScreen(
             }
             Spacer(modifier = Modifier.width(12.dp))
             Button(
-                onClick = { },
-                //enabled = !gameStarted,
+                onClick = { gameCompleted =true},
+                enabled = !gameCompleted,
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = PokerDark,
+                    containerColor = successOrange,
                     contentColor = PokerWhite
                 )
             ) {
@@ -166,7 +163,7 @@ fun MainScreen(
             }
         }
         // ---------- WIN AMOUNT ----------
-        if (gameStarted) {
+        if (gameCompleted) {
             Spacer(modifier = Modifier.height(28.dp))
             Text(
                 text = "Enter Win Amount",
@@ -234,6 +231,8 @@ fun MainScreen(
                                 )
                             }
                             winAmount = ""
+                            gameCompleted = false
+                            gameStarted = false
                         },
                     contentAlignment = Alignment.Center
                 ) {
@@ -248,6 +247,8 @@ fun MainScreen(
 
 
         }
+
+
 
         if(showExitDialog && selectedPlayer!=null){
             ExitDialog(
@@ -377,7 +378,6 @@ fun PremiumTableRow(
 
             )
 
-            // Column 3: Exit
             Text(
                 text = "Exit",
                 fontSize = 16.sp,

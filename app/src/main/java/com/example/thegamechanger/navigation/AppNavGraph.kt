@@ -39,16 +39,80 @@ fun AppNavGraph(){
             MainScreen(
                 onAddPersonClick = {
                     navController.navigate("add_person")
+                },
+                onBack = {
+                    navController.navigate("intro"){
+                        popUpTo("main"){inclusive=true}
+                    }
                 }
             )
         }
-
-        // 🔥 THIS WAS MISSING
         composable("add_person") {
             AddPersonScreen(
                 onBack = { navController.popBackStack() }
             )
         }
-
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
