@@ -16,6 +16,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.navigationBarsPadding
+
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -43,6 +45,7 @@ fun IntroScreen (
             onNavigateToLogin()
         }
     }
+    /*
     Box(
         modifier= Modifier
             .fillMaxSize()
@@ -58,15 +61,15 @@ fun IntroScreen (
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ){
-            Spacer(modifier=Modifier.height(60.dp))
-
+            Spacer(modifier = Modifier.weight(1f))
             //Title
             Text(
                 text="Poker DT",
                 fontSize=24.sp,
                 fontWeight= FontWeight.Bold
             )
-            Spacer(modifier=Modifier.height(170.dp))
+            //Spacer(modifier=Modifier.height(170.dp))
+            Spacer(modifier = Modifier.weight(0.2f))
             //Logo
             Image(
                 painter= painterResource(id=R.drawable.logo_final),
@@ -78,7 +81,8 @@ fun IntroScreen (
                     .align(Alignment.CenterHorizontally),
                 contentScale = androidx.compose.ui.layout.ContentScale.Fit
             )
-            Spacer(modifier= Modifier.height(190.dp))
+            Spacer(modifier = Modifier.weight(0.5f))
+            // Spacer(modifier= Modifier.height(190.dp))
             Text(
                 text="Enjoy Playing with\nPoker DT",
                 textAlign = TextAlign.Center,
@@ -86,7 +90,7 @@ fun IntroScreen (
                 fontWeight = FontWeight.Bold,
                 color=androidx.compose.ui.graphics.Color.White
             )
-         Spacer(modifier = Modifier.height(20.dp))
+
             //Button
             Button(
                 onClick={viewModel.onLetStartClicked()},
@@ -107,7 +111,72 @@ fun IntroScreen (
                 )
             }
             Spacer(modifier = Modifier.height(32.dp))
-
         }
     }
+
+     */
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    listOf(PokerOrangeTop, PokerOrangeBottom)
+                )
+            )
+    ) {
+        // 🔹 TOP TITLE
+        Text(
+            text = "Poker DT",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 60.dp)
+        )
+        // 🔹 CENTER LOGO (PERFECTLY CENTERED)
+        Image(
+            painter = painterResource(id = R.drawable.logo_final),
+            contentDescription = "Poker Logo",
+            modifier = Modifier
+                .align(Alignment.Center)
+                .fillMaxWidth(0.75f)
+                .aspectRatio(1f),
+            contentScale = androidx.compose.ui.layout.ContentScale.Fit
+        )
+        // 🔹BOTTOM SECTION
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(horizontal = 24.dp, vertical = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Enjoy Playing with\nPoker DT",
+                textAlign = TextAlign.Center,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = androidx.compose.ui.graphics.Color.White
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = { viewModel.onLetStartClicked() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = androidx.compose.ui.graphics.Color.Black
+                )
+            ) {
+                Text(
+                    text = "Let's Start",
+                    color = androidx.compose.ui.graphics.Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+    }
+
 }

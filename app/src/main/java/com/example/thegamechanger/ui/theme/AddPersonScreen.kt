@@ -36,9 +36,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.thegamechanger.viewmodel.GameViewModel
 
 @Composable
 fun AddPersonScreen(
+    viewModel: GameViewModel,
     onBack:()->Unit
 ){
     val dealers=remember {
@@ -92,8 +94,13 @@ fun AddPersonScreen(
         AddDealerDialog(
             dealer=selectedDealer!!,
             onDismiss={showDialog=false},
-            onAdd={
-                showDialog=false
+            onAdd={amountString ->
+                val amount = amountString.toIntOrNull() ?: 0
+                // FIXED: Use correct variable names
+                viewModel.addOrUpdatePlayer(selectedDealer!!, amount)
+                showDialog = false
+                onBack()
+
             }
         )
     }
@@ -142,7 +149,8 @@ fun AddDealerDialog(
     onDismiss:()->Unit,
     onAdd:(String)->Unit
 ){
-    var name by remember { mutableStateOf("") }
+    var amountText by remember { mutableStateOf("") } // Renamed for clarity
+        // var name by remember { mutableStateOf("") }
     BasicAlertDialog(onDismissRequest = onDismiss) {
         Card(
             shape = RoundedCornerShape(20.dp),
@@ -158,8 +166,8 @@ fun AddDealerDialog(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
+                    value = amountText,
+                    onValueChange = { amountText = it },
                     label = { Text("Amount") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
@@ -194,7 +202,9 @@ fun AddDealerDialog(
                         )
                         Button(
                             onClick = {
-                                if (name.isNotBlank()) onAdd(name)
+                               if(amountText.isNotBlank()){
+                                   onAdd(amountText)
+                               }
                             },
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
