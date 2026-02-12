@@ -59,16 +59,29 @@ import androidx.compose.ui.text.input.VisualTransformation
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: (Boolean) -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val navigate by viewModel.navigateToHome.observeAsState(false)
     var passwordVisible by remember { mutableStateOf(false) }
+   /*
     LaunchedEffect(navigate) {
         if (navigate) onLoginSuccess()
     }
+
+    */
     val focusManager = LocalFocusManager.current
+
+    // Combined logic: Check credentials and notify NavGraph
+    val handleLogin = {
+        if (email == "admin@poker.com" && password == "admin123") {
+            onLoginSuccess(true) // Navigate to Manager
+        } else if (email.isNotEmpty() && password.isNotEmpty()) {
+            onLoginSuccess(false) // Navigate to Main/Dealer
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -112,7 +125,6 @@ fun LoginScreen(
                     .shadow(30.dp, CircleShape, spotColor = PokerBloodRedBright)
             )
             Spacer(modifier = Modifier.height(40.dp))
-            // --- THE GLASS LOGIN CARD ---
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -191,7 +203,8 @@ fun LoginScreen(
                     )
                     Spacer(modifier = Modifier.height(32.dp))
                     Button(
-                        onClick = { viewModel.onLoginClicked(email, password) },
+                        //onClick = { viewModel.onLoginClicked(email, password) },
+                        onClick = { handleLogin() },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(64.dp)

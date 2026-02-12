@@ -10,7 +10,7 @@ import com.example.thegamechanger.ui.theme.IntroScreen
 import com.example.thegamechanger.ui.theme.LoginScreen
 import com.example.thegamechanger.ui.theme.MainScreen
 import com.example.thegamechanger.viewmodel.GameViewModel
-
+import com.example.thegamechanger.viewmodel.ManagerDashboard
 
 @Composable
 fun AppNavGraph(){
@@ -31,35 +31,48 @@ fun AppNavGraph(){
         }
         composable("login"){
             LoginScreen(
+                onLoginSuccess = { isManager ->
+                    if (isManager) {
+                        navController.navigate("manager_dashboard") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    } else {
+                        navController.navigate("main") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    }
+                }
+            )
+        }
+
+        // MOVED OUTSIDE of login block
+        composable("manager_dashboard") {
+            ManagerDashboard(onLogout = {
+                navController.navigate("login") {
+                    popUpTo("manager_dashboard") { inclusive = true }
+                }
+            })
+
+           /*
+            LoginScreen(
                 onLoginSuccess = {
                     navController.navigate("main") {
                         popUpTo("login") { inclusive = true }
                     }
                 }
             )
-        }
-        composable("main") {
-           /* MainScreen(
-                onAddPersonClick = {
-                    navController.navigate("add_person")
-                },
-                onBack = {
-                    navController.navigate("intro"){
-                        popUpTo("main"){inclusive=true}
-                    }
-                }
-            )
-        }
-        composable("add_person") {
-            AddPersonScreen(
-                onBack = { navController.popBackStack() }
-            )
 
             */
+
+
+        }
+        composable("main") {
             MainScreen(
                 viewModel = gameViewModel,
                 onAddPersonClick = { navController.navigate("add_person") },
-                onBack = { /* handle back */ }
+                onBack = { navController.navigate("login"){
+                    popUpTo("main"){inclusive=true}
+                } }
             )
         }
         composable("add_person") {

@@ -61,6 +61,10 @@ import com.example.thegamechanger.viewmodel.Player
 
 
 // --- REFINED BLOOD RED PALETTE ---
+// Replace PokerGlass and PokerDialogGlass with these
+
+val PokerTableBorder = Color(0xFFFFD700).copy(alpha = 0.2f) // Soft gold glow border
+val PokerCardInner = Color(0xFF1A0000).copy(alpha = 0.7f) // Darker core for readability
 val PokerNightBlack = Color(0xFF050505)
 val PokerBloodRed = Color(0xFF8B0000) // Deep Blood Red
 val PokerBloodRedBright = Color(0xFFFF0000) // Vibrant Red for glow
@@ -89,12 +93,17 @@ fun MainScreen(
     onBack: () -> Unit
 ) {
     var gameStarted by remember { mutableStateOf(false) }
+    var isSettling by remember { mutableStateOf(false) }  // Controls "FINISH" visibility
     var gameCompleted by remember { mutableStateOf(false) }
     val players = viewModel.players
     var winAmount by remember { mutableStateOf("") }
     var showExitDialog by remember { mutableStateOf(false) }
     var selectedPlayer by remember { mutableStateOf<Player?>(null) }
 
+    // This handles the physical back button on the phone
+    BackHandler {
+        onBack() // Redirects to Login
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -102,18 +111,7 @@ fun MainScreen(
                 Brush.verticalGradient(
                     colors = listOf(PokerCrimsonTop, PokerCrimsonBottom)
                 )
-           /* .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        PokerDeepBlood,
-                       // Color(0xFF4A0404), // Deep Blood Red Top
-                       // Color(0xFF2A0505), // Mid Blood Red
-                        Color(0xFF220000),
-                        PokerNightBlack     // Fades into Black at the bottom
-                    )
-                )
 
-            */
             )
     ) {
         // --- AMBIENT BLOOD RED GLOW (Top Left) ---
@@ -128,12 +126,7 @@ fun MainScreen(
                         radius = 800f
                     )
                 )
-               /* .size(400.dp)
-                .offset(x = (-150).dp, y = (-150).dp)
-                .background(PokerBloodRed.copy(alpha = 0.25f), CircleShape)
-                .blur(100.dp)
 
-                */
         )
 
         Column(
@@ -209,7 +202,9 @@ fun MainScreen(
             // ---- ACTION AREA ----
             ActionButtons(
                 gameStarted = gameStarted,
-                onStart = { gameStarted = true },
+                isSettling = isSettling,
+                onStart = { gameStarted = true
+                          isSettling=false},
                 onComplete = { gameCompleted = true }
             )
 
@@ -239,6 +234,7 @@ fun MainScreen(
     }
 }
 
+/*
 @Composable
 fun PremiumTable(players: List<Player>, onExitClick: (Player) -> Unit) {
     Card(
@@ -273,6 +269,46 @@ fun PremiumTable(players: List<Player>, onExitClick: (Player) -> Unit) {
     }
 }
 
+ */
+@Composable
+fun PremiumTable(players: List<Player>, onExitClick: (Player) -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(20.dp, RoundedCornerShape(30.dp), spotColor = Color.Black)
+            .border(
+                width = 1.dp,
+                brush = Brush.verticalGradient(
+                    listOf(Color.White.copy(alpha = 0.3f), Color.Transparent, PokerGold.copy(alpha = 0.2f))
+                ),
+                shape = RoundedCornerShape(30.dp)
+            ),
+        shape = RoundedCornerShape(30.dp),
+        colors = CardDefaults.cardColors(containerColor = PokerGlass),
+        elevation = CardDefaults.cardElevation(0.dp) // Use shadow modifier instead for better control
+    ) {
+        Column(modifier = Modifier.padding(bottom = 10.dp)) {
+            // --- HEADER WITH UNDERLINE ---
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White.copy(alpha = 0.05f))
+                    .padding(vertical = 18.dp, horizontal = 24.dp)
+            ) {
+                Text("PLAYER", Modifier.weight(1.2f), color = PokerGold.copy(alpha = 0.7f), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.5.sp)
+                Text("BANKROLL", Modifier.weight(1f), color = PokerGold.copy(alpha = 0.7f), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center)
+                Text("ACTION", Modifier.weight(0.8f), color = PokerGold.copy(alpha = 0.7f), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.End)
+            }
+
+            players.forEachIndexed { index, player ->
+                PremiumTableRow(player, index == players.lastIndex) { onExitClick(player) }
+            }
+        }
+    }
+}
+
+
+/*
 @Composable
 fun PremiumTableRow(player: Player, isLast: Boolean, onExit: () -> Unit) {
     Row(
@@ -304,12 +340,71 @@ fun PremiumTableRow(player: Player, isLast: Boolean, onExit: () -> Unit) {
     if (!isLast) HorizontalDivider(color = Color.White.copy(alpha = 0.07f), modifier = Modifier.padding(horizontal = 24.dp))
 }
 
+
+ */
+
 @Composable
-fun ActionButtons(gameStarted: Boolean, onStart: () -> Unit, onComplete: () -> Unit) {
+fun PremiumTableRow(player: Player, isLast: Boolean, onExit: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 20.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Player Name in clean White
+        Text(
+            text = player.name,
+            modifier = Modifier.weight(1.2f),
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            fontSize = 17.sp
+        )
+
+        // Amount in Glow Gold
+        Text(
+            text = "₹${player.amount}",
+            modifier = Modifier.weight(1f),
+            color = PokerGoldNeon,
+            fontWeight = FontWeight.Black,
+            fontSize = 19.sp,
+            textAlign = TextAlign.Center
+        )
+
+        // Exit button styled as a "Red Button" or clean text
+        Box(
+            modifier = Modifier
+                .weight(0.8f)
+                .clickable { onExit() },
+            contentAlignment = Alignment.CenterEnd
+        ) {
+            Text(
+                text = "EXIT",
+                color = PokerVibrantRed,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 12.sp,
+                letterSpacing = 1.sp,
+                modifier = Modifier
+                    .border(1.dp, PokerVibrantRed.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            )
+        }
+    }
+    if (!isLast) {
+        HorizontalDivider(
+            color = Color.White.copy(alpha = 0.05f),
+            modifier = Modifier.padding(horizontal = 24.dp)
+        )
+    }
+}
+
+@Composable
+fun ActionButtons(gameStarted: Boolean,
+                  isSettling:Boolean,
+                  onStart: () -> Unit, onComplete: () -> Unit) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         Button(
             onClick = onStart,
-            enabled = !gameStarted,
+            enabled = !gameStarted && !isSettling ,
             modifier = Modifier.weight(1f).height(65.dp),
             shape = RoundedCornerShape(22.dp),
             colors = ButtonDefaults.buttonColors(
@@ -323,9 +418,16 @@ fun ActionButtons(gameStarted: Boolean, onStart: () -> Unit, onComplete: () -> U
 
         Button(
             onClick = onComplete,
+            enabled = gameStarted && !isSettling,
             modifier = Modifier.weight(1f).height(65.dp),
             shape = RoundedCornerShape(22.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = PokerMint),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = PokerMint,
+                contentColor = Color.Black,
+                disabledContainerColor = Color(0xFFFFFF00), // Dark Mint when disabled
+                disabledContentColor = Color.DarkGray
+            ),
+
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 12.dp)
         ) {
             Text("FINISH", fontWeight = FontWeight.Black, color = Color.Black, fontSize = 16.sp)
@@ -333,36 +435,7 @@ fun ActionButtons(gameStarted: Boolean, onStart: () -> Unit, onComplete: () -> U
     }
 }
 
-/*
-@Composable
-fun EarningsInput(winAmount: String, onAmountChange: (String) -> Unit, onSubmit: () -> Unit) {
-    Spacer(modifier = Modifier.height(24.dp))
-    OutlinedTextField(
-        value = winAmount,
-        onValueChange = onAmountChange,
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text("Enter Total Winning Pot", color = PokerBloodRedBright) },
-        shape = RoundedCornerShape(20.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = PokerBloodRedBright,
-            unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
-            focusedTextColor = Color.White,
-            cursorColor = PokerBloodRedBright
-        )
-    )
-    Spacer(modifier = Modifier.height(16.dp))
-    Button(
-        onClick = onSubmit,
-        modifier = Modifier.fillMaxWidth().height(60.dp).shadow(20.dp, RoundedCornerShape(20.dp), spotColor = PokerBloodRedBright),
-        colors = ButtonDefaults.buttonColors(containerColor = PokerBloodRedBright),
-        shape = RoundedCornerShape(20.dp)
-    ) {
-        Text("CONFIRM POT", color = Color.White, fontWeight = FontWeight.Black)
-    }
-}
 
-
- */
 @Composable
 fun EarningsInput(winAmount: String, onAmountChange: (String) -> Unit, onSubmit: () -> Unit) {
     Spacer(modifier = Modifier.height(24.dp))

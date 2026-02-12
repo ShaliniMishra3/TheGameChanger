@@ -10,9 +10,12 @@ import com.google.gson.reflect.TypeToken
 class GameViewModel(application: Application): AndroidViewModel(application) {
     private val prefs=application.getSharedPreferences("game_data",Context.MODE_PRIVATE)
     private val gson= Gson()
-
+    private val masterPlayerList = listOf("Roopesh", "Saini", "Aman", "Arpit", "Rahul", "Neha")
+    val availablePlayers: List<String>
+        get() = masterPlayerList.filter { masterName ->
+            players.none { it.name == masterName }
+        }
     val players= mutableStateListOf<Player>()
-        //Player("Dealer",15000)
     init {
         loadData()
     }
@@ -41,7 +44,6 @@ class GameViewModel(application: Application): AndroidViewModel(application) {
         }
         saveData()
     }
-
     fun updateDealerCommission(winAmount: Int) {
         val dealerIndex = players.indexOfFirst { it.name == "Dealer" }
         if (dealerIndex != -1) {
