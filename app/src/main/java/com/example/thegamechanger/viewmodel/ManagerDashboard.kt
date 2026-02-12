@@ -82,14 +82,12 @@ fun ManagerDashboard(onLogout: () -> Unit) {
                 Text("TIME", color = Color.Gray, fontSize = 14.sp, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.End)
             }
             Spacer(modifier = Modifier.height(8.dp))
-            // RENDER MULTIPLE DEALER ROWS
             dealers.forEachIndexed { index, dealer ->
                 DealerRow(
                     dealer = dealer,
                     currentTime = currentTime,
                     tables = tables,
                     onTableChange = { newTable ->
-                        // Update the specific dealer and reset their specific timer
                         dealers[index] = dealer.copy(
                             selectedTable = newTable,
                             assignmentTime = System.currentTimeMillis()
@@ -109,7 +107,6 @@ fun DealerRow(
     onTableChange: (String) -> Unit
 ) {
     var isExpanded by remember { mutableStateOf(false) }
-    // Calculate time for THIS specific dealer
     val elapsedMillis = currentTime - dealer.assignmentTime
     val seconds = (elapsedMillis / 1000) % 60
     val minutes = (elapsedMillis / (1000 * 60)) % 60
@@ -125,7 +122,6 @@ fun DealerRow(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
         ) {
-            // 1. Dealer Name
             Text(
                 text = dealer.name,
                 color = Color.White,
@@ -133,7 +129,6 @@ fun DealerRow(
                 fontSize = 16.sp,
                 modifier = Modifier.weight(1.5f)
             )
-
             Box(modifier = Modifier.weight(1.5f)) {
                 Row(
                     modifier = Modifier
@@ -162,7 +157,6 @@ fun DealerRow(
                     }
                 }
             }
-            // 3. Independent Timer
             Text(
                 text = timerText,
                 color = PokerMint,
@@ -177,96 +171,6 @@ fun DealerRow(
 }
 
 
-/*
-@Composable
-fun ManagerDashboard(onLogout: () -> Unit) {
-    var selectedTable by remember { mutableStateOf("Table Alpha") }
-    var assignmentTime by remember { mutableStateOf(System.currentTimeMillis()) }
-    var currentTime by remember { mutableStateOf(System.currentTimeMillis()) }
-    var isExpanded by remember { mutableStateOf(false) } // Added missing variable
-    val tables = listOf("Table Alpha", "Table Bravo", "Table Charlie", "Table Delta")
 
-    // Fixed Timer logic: Update 'currentTime' every second
-    LaunchedEffect(Unit) {
-        while (true) {
-            currentTime = System.currentTimeMillis()
-            delay(1000)
-        }
-    }
 
-    // Calculate elapsed time since assignment
-    val elapsedMillis = currentTime - assignmentTime
-    val seconds = (elapsedMillis / 1000) % 60
-    val minutes = (elapsedMillis / (1000 * 60)) % 60
-    val hours = (elapsedMillis / (1000 * 60 * 60))
-    val timerText = String.format("%02d:%02d:%02d", hours, minutes, seconds)
 
-    Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(PokerCrimsonTop, PokerCrimsonBottom)))) {
-        Column(modifier = Modifier.padding(24.dp).statusBarsPadding()) {
-
-            // Header
-            Text("MANAGER DASHBOARD", color = PokerGoldNeon, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp, letterSpacing = 3.sp)
-            Text("Assignment Control", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Black)
-
-            Spacer(modifier = Modifier.height(30.dp))
-
-            // DEAL NAME CARD
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = PokerGlass),
-                shape = RoundedCornerShape(24.dp),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
-            ) {
-                Column(modifier = Modifier.padding(24.dp)) {
-                    Text("CURRENT DEALER", color = Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    Text("Roopesh Saini", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // TIMER DISPLAY
-                    Text("SESSION DURATION", color = Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    Text(timerText, color = PokerMint, fontSize = 48.sp, fontWeight = FontWeight.Black, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // TABLE SELECTION DROPDOWN
-            Text("ASSIGN TABLE", color = Color.White.copy(alpha = 0.6f), fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp))
-
-            Box {
-                Button(
-                    onClick = { isExpanded = true },
-                    modifier = Modifier.fillMaxWidth().height(60.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black.copy(alpha = 0.3f)),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f))
-                ) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(selectedTable, color = Color.White)
-                        Text("▼", color = PokerGoldNeon)
-                    }
-                }
-
-                DropdownMenu(
-                    expanded = isExpanded,
-                    onDismissRequest = { isExpanded = false },
-                    modifier = Modifier.background(PokerDialogGlass)
-                ) {
-                    tables.forEach { table ->
-                        DropdownMenuItem(
-                            text = { Text(table, color = Color.White) },
-                            onClick = {
-                                selectedTable = table
-                                isExpanded = false
-                                // RESET TIMER ON ASSIGNMENT
-                                assignmentTime = System.currentTimeMillis()
-                            }
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-*/
