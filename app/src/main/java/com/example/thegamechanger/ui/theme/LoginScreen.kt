@@ -7,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,7 +41,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.thegamechanger.viewmodel.LoginViewModel
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.example.thegamechanger.R
@@ -49,32 +49,44 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.runtime.collectAsState
+import com.example.thegamechanger.UiState
+
 
 @Composable
 fun LoginScreen(
-    viewModel: LoginViewModel = viewModel(),
+    viewModel: LoginViewModel = hiltViewModel(),
     onLoginSuccess: (Boolean) -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    val navigate by viewModel.navigateToHome.observeAsState(false)
+    var selectedRole by remember { mutableStateOf("Dealer") }
+    //val navigate by viewModel.navigateToHome.observeAsState(false)
     var passwordVisible by remember { mutableStateOf(false) }
-   /*
-    LaunchedEffect(navigate) {
-        if (navigate) onLoginSuccess()
+    val loginState by viewModel.loginState.collectAsState()
+
+
+    val navigateToManager by viewModel.navigateToManager.collectAsState()
+    LaunchedEffect(navigateToManager) {
+        navigateToManager?.let {
+            onLoginSuccess(it)
+            viewModel.resetNavigation()
+        }
     }
 
-    */
-    val focusManager = LocalFocusManager.current
 
-    // Combined logic: Check credentials and notify NavGraph
-    val handleLogin = {
+
+    val focusManager = LocalFocusManager.current
+    /*val handleLogin = {
         if (email == "admin@poker.com" && password == "admin123") {
             onLoginSuccess(true) // Navigate to Manager
         } else if (email.isNotEmpty() && password.isNotEmpty()) {
@@ -82,6 +94,7 @@ fun LoginScreen(
         }
     }
 
+     */
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -115,7 +128,6 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(60.dp))
-            // Logo with a "Neon Red" glow shadow
             Image(
                 painter = painterResource(id = R.drawable.logo_final),
                 contentDescription = "App logo",
@@ -129,7 +141,7 @@ fun LoginScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
-                        Color.Black.copy(alpha = 0.2f), // Semi-transparent "Glass"
+                        Color.Black.copy(alpha = 0.2f),
                         RoundedCornerShape(32.dp)
                     )
                     .border(
@@ -175,7 +187,6 @@ fun LoginScreen(
                         )
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    // --- ELEGANT PASSWORD INPUT ---
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
@@ -201,10 +212,41 @@ fun LoginScreen(
                             unfocusedTextColor = Color.White
                         )
                     )
+                    //new one
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = selectedRole == "Dealer",
+                            onClick = { selectedRole = "Dealer" },
+                            colors = RadioButtonDefaults.colors(
+                                selectedColor = PokerGoldNeon
+                            )
+                        )
+                        Text(
+                            text = "Dealer",
+                            color = Color.White,
+                            modifier = Modifier.padding(end = 16.dp)
+                        )
+
+                        RadioButton(
+                            selected = selectedRole == "Manager",
+                            onClick = { selectedRole = "Manager" },
+                            colors = RadioButtonDefaults.colors(
+                                selectedColor = PokerGoldNeon
+                            )
+                        )
+                        Text(
+                            text = "Manager",
+                            color = Color.White
+                        )
+                    }
+
                     Spacer(modifier = Modifier.height(32.dp))
                     Button(
-                        //onClick = { viewModel.onLoginClicked(email, password) },
-                        onClick = { handleLogin() },
+                        onClick = {  viewModel.login(email, password, selectedRole) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(64.dp)
@@ -224,6 +266,32 @@ fun LoginScreen(
                     }
                 }
             }
+            when (loginState) {
+
+                is UiState.Loading -> {
+                    Text(
+                        text = "Logging in...",
+                        color = Color.Yellow
+                    )
+                }
+
+                is UiState.Error -> {
+                    Text(
+                        text = (loginState as UiState.Error).message,
+                        color = Color.White
+                    )
+                }
+
+                is UiState.Success -> {
+                    Text(
+                        text = "Login Successful",
+                        color = Color.Green
+                    )
+                }
+
+                else -> {}
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
             Text(
                 text = "Forgot Access Key?",

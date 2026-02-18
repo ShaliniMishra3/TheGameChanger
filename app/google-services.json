@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "719291295515",
+    "project_id": "the-game-changer-e3078",
+    "storage_bucket": "the-game-changer-e3078.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:719291295515:android:737ebf29588b709e9c15be",
+        "android_client_info": {
+          "package_name": "com.example.thegamechanger"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAmwMTX9gQ8CE-rzd4LQFRDe8cmdusw0qQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

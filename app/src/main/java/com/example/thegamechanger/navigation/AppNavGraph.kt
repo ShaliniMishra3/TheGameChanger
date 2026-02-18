@@ -53,16 +53,6 @@ fun AppNavGraph(){
                 }
             })
 
-           /*
-            LoginScreen(
-                onLoginSuccess = {
-                    navController.navigate("main") {
-                        popUpTo("login") { inclusive = true }
-                    }
-                }
-            )
-
-            */
 
 
         }

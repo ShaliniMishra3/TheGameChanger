@@ -234,42 +234,6 @@ fun MainScreen(
     }
 }
 
-/*
-@Composable
-fun PremiumTable(players: List<Player>, onExitClick: (Player) -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(
-                width = 1.dp,
-                brush = Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.15f), Color.Transparent)),
-                shape = RoundedCornerShape(30.dp)
-            ),
-        shape = RoundedCornerShape(30.dp),
-        colors = CardDefaults.cardColors(containerColor = PokerGlass),
-        elevation = CardDefaults.cardElevation(25.dp)
-    ) {
-        Column(modifier = Modifier.padding(bottom = 10.dp)) {
-            // Header Row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White.copy(alpha = 0.03f))
-                    .padding(vertical = 20.dp, horizontal = 24.dp)
-            ) {
-                Text("PLAYER", Modifier.weight(1.2f), color = Color.Gray, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.2.sp)
-                Text("BANKROLL", Modifier.weight(1f), color = Color.Gray, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center)
-                Text("STATUS", Modifier.weight(0.8f), color = Color.Gray, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.End)
-            }
-
-            players.forEachIndexed { index, player ->
-                PremiumTableRow(player, index == players.lastIndex) { onExitClick(player) }
-            }
-        }
-    }
-}
-
- */
 @Composable
 fun PremiumTable(players: List<Player>, onExitClick: (Player) -> Unit) {
     Card(
@@ -308,40 +272,6 @@ fun PremiumTable(players: List<Player>, onExitClick: (Player) -> Unit) {
 }
 
 
-/*
-@Composable
-fun PremiumTableRow(player: Player, isLast: Boolean, onExit: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 22.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(player.name, Modifier.weight(1.2f), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-
-        Text(
-            "₹${player.amount}",
-            Modifier.weight(1f),
-            color = PokerGoldNeon,
-            fontWeight = FontWeight.Black,
-            fontSize = 20.sp,
-            textAlign = TextAlign.Center
-        )
-
-        Text(
-            "EXIT",
-            Modifier.weight(0.8f).clickable { onExit() },
-            color = PokerBloodRedBright,
-            fontWeight = FontWeight.Black,
-            fontSize = 13.sp,
-            textAlign = TextAlign.End
-        )
-    }
-    if (!isLast) HorizontalDivider(color = Color.White.copy(alpha = 0.07f), modifier = Modifier.padding(horizontal = 24.dp))
-}
-
-
- */
 
 @Composable
 fun PremiumTableRow(player: Player, isLast: Boolean, onExit: () -> Unit) {
