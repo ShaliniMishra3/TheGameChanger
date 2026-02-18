@@ -27,50 +27,6 @@ class LoginViewModel @Inject constructor(
     private val _navigateToManager = MutableStateFlow<Boolean?>(null)
     val navigateToManager = _navigateToManager.asStateFlow()
 
-    /*fun login(email: String, password: String, role: String) {
-        viewModelScope.launch {
-
-            _loginState.value = UiState.Loading
-
-            val result = repository.login(
-                LoginRequest(email, password)
-            )
-
-            _loginState.value = result
-
-            if (result is UiState.Success) {
-
-                if (result.data.Success) {
-
-                    // 🔥 Parse the inner JSON string
-                    val gson = Gson()
-                    val parsedData = gson.fromJson(
-                        result.data.Data,
-                        InnerLoginWrapper::class.java
-                    )
-
-                    val loginResult = parsedData.data.firstOrNull()
-
-                    if (loginResult?.result_status == 1) {
-
-                        _loginState.value =
-                            UiState.Success(result.data)
-
-                        // ✅ Only now navigate
-                        _navigateToManager.value = role == "Manager"
-
-                    } else {
-                        _loginState.value =
-                            UiState.Error(loginResult?.msg ?: "Wrong details")
-                        _navigateToManager.value = null
-                    }
-                }
-            }
-        }
-    }
-
-
-     */
     fun login(email: String, password: String, role: String) {
         viewModelScope.launch {
 

@@ -8,8 +8,6 @@ import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
-
-
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
 
@@ -18,7 +16,6 @@ import javax.inject.Singleton
 object NetworkModule {
 
     private const val BASE_URL = "https://api.thegamechanger.info/"
-
     @Provides
     @Singleton
     fun provideOkHttp(): OkHttpClient {
@@ -29,7 +26,6 @@ object NetworkModule {
             })
             .build()
     }
-
     @Provides
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
@@ -39,7 +35,6 @@ object NetworkModule {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
-
     @Provides
     @Singleton
     fun provideDealerApi(retrofit: Retrofit): DealerApiLogin {
