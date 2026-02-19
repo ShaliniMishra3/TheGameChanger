@@ -9,7 +9,6 @@ import javax.inject.Inject
 class DealerRepository @Inject constructor(
     private val dealerApi: DealerApiLogin
 ) {
-
     suspend fun login(request: LoginRequest): UiState<LoginResponse> {
         return try {
             val response = dealerApi.dealerLogin(request)
@@ -22,6 +21,18 @@ class DealerRepository @Inject constructor(
 
         } catch (e: Exception) {
             UiState.Error(e.localizedMessage ?: "Unknown Error")
+        }
+    }
+    suspend fun managerLogin(request: LoginRequest): UiState<LoginResponse>{
+        return try{
+            val response=dealerApi.managerLogin(request)
+            if(response.isSuccessful && response.body() != null){
+                UiState.Success(response.body()!!)
+            }else{
+                UiState.Error("Manager Login Failed")
+            }
+        }catch(e:Exception){
+            UiState.Error(e.message ?: "Unknown Error")
         }
     }
 }

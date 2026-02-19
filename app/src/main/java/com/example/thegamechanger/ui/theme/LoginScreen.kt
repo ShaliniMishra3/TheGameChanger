@@ -30,7 +30,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -70,7 +69,6 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var selectedRole by remember { mutableStateOf("Dealer") }
-    //val navigate by viewModel.navigateToHome.observeAsState(false)
     var passwordVisible by remember { mutableStateOf(false) }
     val loginState by viewModel.loginState.collectAsState()
 
@@ -82,19 +80,7 @@ fun LoginScreen(
             viewModel.resetNavigation()
         }
     }
-
-
-
     val focusManager = LocalFocusManager.current
-    /*val handleLogin = {
-        if (email == "admin@poker.com" && password == "admin123") {
-            onLoginSuccess(true) // Navigate to Manager
-        } else if (email.isNotEmpty() && password.isNotEmpty()) {
-            onLoginSuccess(false) // Navigate to Main/Dealer
-        }
-    }
-
-     */
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -291,7 +277,6 @@ fun LoginScreen(
 
                 else -> {}
             }
-
             Spacer(modifier = Modifier.height(24.dp))
             Text(
                 text = "Forgot Access Key?",

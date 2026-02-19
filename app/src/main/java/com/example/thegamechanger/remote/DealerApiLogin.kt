@@ -7,9 +7,13 @@ import retrofit2.http.Body
 import retrofit2.http.POST
 
 interface DealerApiLogin {
-
-    @POST("api/DealerApi/DealerLogin")
+    @POST("api/Dealer/DealerLogin")
     suspend fun dealerLogin(
+        @Body request: LoginRequest
+    ): Response<LoginResponse>
+
+    @POST("api/Manager/ManagerLogin")
+    suspend fun managerLogin(
         @Body request: LoginRequest
     ): Response<LoginResponse>
 }
