@@ -3,6 +3,7 @@ package com.example.thegamechanger.ui.theme
 
 
 import android.view.Surface
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -39,6 +40,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -50,23 +53,19 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.thegamechanger.UiState
 import com.example.thegamechanger.viewmodel.GameViewModel
 import com.example.thegamechanger.viewmodel.Player
 
 
 
 
-// --- REFINED BLOOD RED PALETTE ---
-// Replace PokerGlass and PokerDialogGlass with these
 
-val PokerTableBorder = Color(0xFFFFD700).copy(alpha = 0.2f) // Soft gold glow border
-val PokerCardInner = Color(0xFF1A0000).copy(alpha = 0.7f) // Darker core for readability
-val PokerNightBlack = Color(0xFF050505)
-val PokerBloodRed = Color(0xFF8B0000) // Deep Blood Red
 val PokerBloodRedBright = Color(0xFFFF0000) // Vibrant Red for glow
 val PokerGlass = Color(0xFF151515).copy(alpha = 0.9f)
 val PokerGoldNeon = Color(0xFFFFD700)
@@ -86,23 +85,40 @@ val PokerGlassDark = Color(0xFF0D0D0D).copy(alpha = 0.95f) // Less transparent f
 
 // New Color for Dialog Surface (Deep Maroon with Transparency)
 val PokerDialogGlass = Color(0xFF420000).copy(alpha = 0.92f)
+
 @Composable
 fun MainScreen(
     viewModel: GameViewModel,
     onAddPersonClick: () -> Unit,
     onBack: () -> Unit
 ) {
+    val addState by viewModel.addPlayerState.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(addState) {
+        if (addState is UiState.Success) {
+            Toast.makeText(
+                context,
+                (addState as UiState.Success).data.Msg,
+                Toast.LENGTH_LONG
+            ).show()
+            viewModel.clearAddPlayerState()
+        }
+    }
     var gameStarted by remember { mutableStateOf(false) }
     var isSettling by remember { mutableStateOf(false) }  // Controls "FINISH" visibility
     var gameCompleted by remember { mutableStateOf(false) }
-    val players = viewModel.players
+   val players = viewModel.players
     var winAmount by remember { mutableStateOf("") }
     var showExitDialog by remember { mutableStateOf(false) }
     var selectedPlayer by remember { mutableStateOf<Player?>(null) }
-
-    // This handles the physical back button on the phone
+    val dealerName by viewModel.dealerName
+    val tableName by viewModel.tableName
+    LaunchedEffect(Unit) {
+        viewModel.fetchPlayerOnTable(dealerId = 2) // dynamic id
+    }
     BackHandler {
-        onBack() // Redirects to Login
+        onBack()
     }
     Box(
         modifier = Modifier
@@ -114,7 +130,6 @@ fun MainScreen(
 
             )
     ) {
-        // --- AMBIENT BLOOD RED GLOW (Top Left) ---
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -138,50 +153,99 @@ fun MainScreen(
             Spacer(modifier = Modifier.height(50.dp))
 
             // ---- LUXURY HEADER ----
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+
+// ---- PREMIUM HEADER CARD ----
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(25.dp, RoundedCornerShape(32.dp)),
+                shape = RoundedCornerShape(32.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFF2A0000) // Deep rich maroon (less transparent)
+                ),
+                border = BorderStroke(
+                    1.dp,
+                    Brush.horizontalGradient(
+                        listOf(
+                            Color.White.copy(alpha = 0.25f),
+                            PokerGoldNeon.copy(alpha = 0.4f),
+                            Color.Transparent
+                        )
+                    )
+                )
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
-                            color = PokerBloodRedBright,
-                            shape = CircleShape,
-                            modifier = Modifier.size(8.dp).shadow(10.dp, CircleShape, spotColor = PokerBloodRedBright)
-                        ) {}
-                        Spacer(modifier = Modifier.width(10.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 26.dp, vertical = 24.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+
+                    Column {
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .background(PokerGoldNeon, CircleShape)
+                            )
+
+                            Spacer(modifier = Modifier.width(10.dp))
+
+                            Text(
+                                text = "LIVE TABLE",
+                                fontSize = 11.sp,
+                                letterSpacing = 2.sp,
+                                color = Color.White.copy(alpha = 0.6f),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
                         Text(
-                            text = "LIVE TABLE",
-                            fontSize = 11.sp,
-                            letterSpacing = 2.5.sp,
-                            color = Color.White.copy(alpha = 0.6f),
-                            fontWeight = FontWeight.Bold
+                            text = dealerName,
+                            fontSize = 24.sp,     // smaller = more elegant
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text(
+                            text = tableName,
+                            fontSize = 14.sp,
+                            color = PokerGoldNeon,
+                            letterSpacing = 1.sp,
+                            fontWeight = FontWeight.Medium
                         )
                     }
-                    Text(
-                        text = "Roopesh",
-                        fontSize = 36.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Color.White,
-                        letterSpacing = (-1).sp
-                    )
-                }
 
-                // Add Player Button - Gold & Red Shadow
-                IconButton(
-                    onClick = onAddPersonClick,
-                    modifier = Modifier
-                        .size(56.dp)
-                        .background(
-                            Brush.verticalGradient(listOf(PokerGoldNeon, PokerGoldDark)),
-                            RoundedCornerShape(18.dp)
+                    // Premium Gold Circle Button
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .shadow(12.dp, CircleShape)
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(PokerGoldNeon, PokerGoldDark)
+                                ),
+                                CircleShape
+                            )
+                            .clickable { onAddPersonClick() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "+",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Color.Black
                         )
-                        .shadow(15.dp, RoundedCornerShape(18.dp), spotColor = PokerBloodRedBright)
-                ) {
-                    Text("+", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                    }
                 }
             }
-
             Spacer(modifier = Modifier.height(30.dp))
 
             // ---- THE GLASS TABLE ----
@@ -229,8 +293,20 @@ fun MainScreen(
         ExitDialog(
             player = selectedPlayer!!,
             onDismiss = { showExitDialog = false },
-            onSubmit = { viewModel.removePlayer(selectedPlayer!!); showExitDialog = false }
+            onSubmit = { finalAmount ->
+
+                viewModel.addPlayerToTable(
+                    dId = viewModel.dealerId.value,
+                    pId = selectedPlayer!!.pId,   // ⚠ make sure Player has pId
+                    tbId = viewModel.tableId.value,
+                    coin = finalAmount.toDouble(),
+                    isAdd = 0   // 🔥 EXIT CASE
+                )
+
+                showExitDialog = false
+            }
         )
+
     }
 }
 
@@ -442,7 +518,9 @@ fun EmptyTablePlaceholder() {
 
 @Composable
 
-fun ExitDialog(player: Player, onDismiss: () -> Unit, onSubmit: (Int) -> Unit) {
+fun ExitDialog(player: Player,
+               onDismiss: () -> Unit,
+               onSubmit: (Int) -> Unit) {
 
     var remaining by remember { mutableStateOf(player.amount.toString()) }
 

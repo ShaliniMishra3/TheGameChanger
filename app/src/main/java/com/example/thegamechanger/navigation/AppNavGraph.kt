@@ -65,6 +65,14 @@ fun AppNavGraph(){
                 } }
             )
         }
+        /*composable("add_person") {
+            AddPersonScreen(
+                viewModel = gameViewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+         */
         composable("add_person") {
             AddPersonScreen(
                 viewModel = gameViewModel,

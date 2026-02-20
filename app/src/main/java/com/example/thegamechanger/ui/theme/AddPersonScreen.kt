@@ -1,5 +1,6 @@
 package com.example.thegamechanger.ui.theme
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -28,6 +29,8 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -37,21 +40,52 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.thegamechanger.UiState
+import com.example.thegamechanger.model.PlayerDto
 import com.example.thegamechanger.viewmodel.GameViewModel
 
 @Composable
 fun AddPersonScreen(
     viewModel: GameViewModel,
+
     onBack: () -> Unit
 ) {
-    val playersToInvite = viewModel.availablePlayers
-   /* val playersToInvite = remember {
-        mutableStateListOf("Roopesh", "Saini", "Aman", "Arpit", "Rahul", "Neha")
+    val playerState by viewModel.availablePlayers.collectAsState()
+    val addState by viewModel.addPlayerState.collectAsState()
+    var selectedPlayerId by remember { mutableStateOf<Int?>(null) }
+    val dealerId by viewModel.dealerId
+    val context = LocalContext.current
+    val tableId by viewModel.tableId
+    LaunchedEffect(Unit) {
+        viewModel.loadPlayers()
     }
-    */
+    LaunchedEffect(addState) {
+
+        when (addState) {
+
+            is UiState.Success -> {
+                val msg = (addState as UiState.Success).data.Msg
+                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                viewModel.clearAddPlayerState()   // ✅ RESET
+                                      // ✅ navigate back safely
+            }
+            is UiState.Error -> {
+                Toast.makeText(
+                    context,
+                    (addState as UiState.Error).message,
+                    Toast.LENGTH_LONG
+                ).show()
+
+                viewModel.clearAddPlayerState()   // ✅ RESET
+            }
+            else -> {}
+        }
+    }
+
     var showDialog by remember { mutableStateOf(false) }
     var selectedPlayerName by remember { mutableStateOf<String?>(null) }
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
@@ -112,48 +146,91 @@ fun AddPersonScreen(
                 )
             }
             Spacer(modifier = Modifier.height(30.dp))
+
             // --- PLAYER LIST ---
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                playersToInvite.forEach { name ->
-                    DealerRow(
-                        dealerName = name,
-                        onAddClick = {
-                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-                            selectedPlayerName = name
-                            showDialog = true
+
+                when (playerState) {
+
+                    is UiState.Loading -> {
+                        Text("Loading...", color = Color.White)
+                    }
+
+                    is UiState.Error -> {
+                        Text(
+                            text = (playerState as UiState.Error).message,
+                            color = Color.Red
+                        )
+                    }
+
+                    is UiState.Success<*> -> {
+                        val players =
+                            (playerState as UiState.Success<List<PlayerDto>>).data
+
+                        players.forEach { player ->
+                            DealerRow(
+                                dealerName = player.Name,
+                                mobile = player.Mobile,
+                                onAddClick = {
+                                    haptic.performHapticFeedback(
+                                        androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove
+                                    )
+                                    selectedPlayerName = player.Name
+                                    selectedPlayerId = player.PId
+                                    showDialog = true
+                                }
+                            )
                         }
-                    )
-                }
-                // Show a message if everyone is already added
-                if (playersToInvite.isEmpty()) {
-                    Text(
-                        text = "All players are currently at the table.",
-                        color = Color.White.copy(alpha = 0.5f),
-                        modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 40.dp)
-                    )
+
+                        if (players.isEmpty()) {
+                            Text(
+                                text = "No players found.",
+                                color = Color.White.copy(alpha = 0.5f),
+                                modifier = Modifier
+                                    .align(Alignment.CenterHorizontally)
+                                    .padding(top = 40.dp)
+                            )
+                        }
+                    }
+
+                    else -> {}
                 }
             }
+
         }
     }
+
+
 
     if (showDialog && selectedPlayerName != null) {
         AddPlayerDialog(
             playerName = selectedPlayerName!!,
             onDismiss = { showDialog = false },
             onAdd = { amountString ->
+
                 val amount = amountString.toIntOrNull() ?: 0
-                viewModel.addOrUpdatePlayer(selectedPlayerName!!, amount)
+
+                selectedPlayerId?.let { pId ->
+                    viewModel.addPlayerToTable(
+                        dId = dealerId,
+                        pId = pId,
+                        tbId = tableId,
+                        coin = amount.toDouble(),
+                        isAdd = 1
+                    )
+                }
 
                 showDialog = false
-                onBack() // This returns to Main Screen after adding
             }
         )
     }
+
 }
 
 @Composable
 fun DealerRow(
     dealerName: String,
+    mobile: String,
     onAddClick: () -> Unit
 ) {
     Box(
@@ -173,14 +250,22 @@ fun DealerRow(
             ) {
                 Text(dealerName.take(1), color = PokerGoldNeon, fontWeight = FontWeight.Bold)
             }
-            Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                text = dealerName,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                modifier = Modifier.weight(1f)
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = dealerName,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+
+                Text(
+                    text = mobile,
+                    fontSize = 13.sp,
+                    color = Color.White.copy(alpha = 0.6f)
+                )
+            }
+
+
             // Gold Plus Icon
             Box(
                 modifier = Modifier

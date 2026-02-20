@@ -1,9 +1,15 @@
 package com.example.thegamechanger.repository
 
 import com.example.thegamechanger.UiState
+import com.example.thegamechanger.model.AddPlayerTableRequest
+import com.example.thegamechanger.model.AddPlayerTableResponse
 import com.example.thegamechanger.model.LoginRequest
 import com.example.thegamechanger.model.LoginResponse
+import com.example.thegamechanger.model.PlayerDto
+import com.example.thegamechanger.model.PlayerOnTableItem
+import com.example.thegamechanger.model.PlayerOnTableRequest
 import com.example.thegamechanger.remote.DealerApiLogin
+import retrofit2.Response
 import javax.inject.Inject
 
 class DealerRepository @Inject constructor(
@@ -34,5 +40,70 @@ class DealerRepository @Inject constructor(
         }catch(e:Exception){
             UiState.Error(e.message ?: "Unknown Error")
         }
+    }
+
+    /*suspend fun getPlayerList(): UiState<List<PlayerDto>> {
+        return try {
+            val response = dealerApi.getPlayerList()
+
+            if (response.isSuccessful && response.body()?.Success == true) {
+                UiState.Success(response.body()!!.Data.data)
+            } else {
+                UiState.Error("Failed to load players")
+            }
+
+        } catch (e: Exception) {
+            UiState.Error(e.message ?: "Unknown Error")
+        }
+    }
+
+     */
+    suspend fun getPlayerList(): UiState<List<PlayerDto>> {
+        return try {
+            val response = dealerApi.getPlayerList()
+
+            if (response.isSuccessful && response.body() != null) {
+
+                val body = response.body()!!
+
+                if (body.Success) {
+                    UiState.Success(body.Data.data)   // 🔥 THIS IS IMPORTANT
+                } else {
+                    UiState.Error(body.Message)
+                }
+
+
+            } else {
+                UiState.Error("Failed to load data")
+            }
+
+        } catch (e: Exception) {
+            UiState.Error(e.localizedMessage ?: "Unknown Error")
+        }
+
+    }
+
+    suspend fun getPlayerOnTable(dealerId: Int): UiState<List<PlayerOnTableItem>> {
+        return try {
+
+            val response = dealerApi.getPlayerOnTable(
+                PlayerOnTableRequest(DId = dealerId)
+            )
+
+            if (response.isSuccessful && response.body()?.Success == true) {
+                UiState.Success(response.body()?.Data?.data ?: emptyList())
+            } else {
+                UiState.Error(response.body()?.Message ?: "Something went wrong")
+            }
+
+        } catch (e: Exception) {
+            UiState.Error(e.message ?: "Network Error")
+        }
+    }
+
+    suspend fun addPlayerToTable(
+        request: AddPlayerTableRequest
+    ): Response<AddPlayerTableResponse> {
+        return dealerApi.addPlayerToTable(request)
     }
 }
