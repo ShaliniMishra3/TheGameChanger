@@ -44,17 +44,12 @@ fun AppNavGraph(){
                 }
             )
         }
-
-        // MOVED OUTSIDE of login block
         composable("manager_dashboard") {
             ManagerDashboard(onLogout = {
                 navController.navigate("login") {
                     popUpTo("manager_dashboard") { inclusive = true }
                 }
             })
-
-
-
         }
         composable("main") {
             MainScreen(
@@ -65,14 +60,6 @@ fun AppNavGraph(){
                 } }
             )
         }
-        /*composable("add_person") {
-            AddPersonScreen(
-                viewModel = gameViewModel,
-                onBack = { navController.popBackStack() }
-            )
-        }
-
-         */
         composable("add_person") {
             AddPersonScreen(
                 viewModel = gameViewModel,

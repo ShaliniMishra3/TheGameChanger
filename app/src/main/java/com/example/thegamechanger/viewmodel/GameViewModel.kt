@@ -71,7 +71,6 @@ class GameViewModel @Inject constructor(
         _addPlayerState.value = UiState.Idle
     }
     fun updateDealerCommission(winAmount: Int) {
-      //  val dealerIndex = _players.indexOfFirst { it.name == "Dealer" }
         val dealerIndex = _players.indexOfFirst {
             it.name == _dealerName.value
         }
@@ -87,26 +86,12 @@ class GameViewModel @Inject constructor(
         viewModelScope.launch {
 
             val result = repository.getPlayerOnTable(dealerId)
-
             if (result is UiState.Success) {
-
                 _players.clear()
-
-              /*  if (result.data.isNotEmpty()) {
-
-                    // 🔥 SET DEALER & TABLE NAME FROM FIRST ITEM
-                    _dealerName.value = result.data.first().DealerName
-                    _tableName.value = result.data.first().TableName
-                }
-
-               */
                 if (result.data.isNotEmpty()) {
-
                     val first = result.data.first()
-
                     _dealerName.value = first.DealerName
                     _tableName.value = first.TableName
-
                     _dealerId.value = first.DId
                     _tableId.value = first.tbId
                 }
@@ -118,12 +103,6 @@ class GameViewModel @Inject constructor(
                             name = item.PlayerName,
                             amount = item.CoinEntry.toInt()
                         )
-                      /*  Player(
-                            name = item.PlayerName,
-                            amount = item.CoinEntry.toInt()
-                        )
-
-                       */
                     )
                 }
             }

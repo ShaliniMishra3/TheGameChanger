@@ -106,7 +106,7 @@ fun MainScreen(
         }
     }
     var gameStarted by remember { mutableStateOf(false) }
-    var isSettling by remember { mutableStateOf(false) }  // Controls "FINISH" visibility
+    var isSettling by remember { mutableStateOf(false) }
     var gameCompleted by remember { mutableStateOf(false) }
    val players = viewModel.players
     var winAmount by remember { mutableStateOf("") }
@@ -115,7 +115,7 @@ fun MainScreen(
     val dealerName by viewModel.dealerName
     val tableName by viewModel.tableName
     LaunchedEffect(Unit) {
-        viewModel.fetchPlayerOnTable(dealerId = 2) // dynamic id
+        viewModel.fetchPlayerOnTable(dealerId = 2)
     }
     BackHandler {
         onBack()
@@ -137,13 +137,11 @@ fun MainScreen(
                 .background(
                     Brush.radialGradient(
                         colors = listOf(Color.White.copy(alpha = 0.05f), Color.Transparent),
-                       // colors = listOf(PokerVibrantRed.copy(alpha = 0.2f), Color.Transparent),
+                        //colors = listOf(PokerVibrantRed.copy(alpha = 0.2f), Color.Transparent),
                         radius = 800f
                     )
                 )
-
         )
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -151,10 +149,7 @@ fun MainScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             Spacer(modifier = Modifier.height(50.dp))
-
-            // ---- LUXURY HEADER ----
-
-// ---- PREMIUM HEADER CARD ----
+      // ---- PREMIUM HEADER CARD ----
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -551,13 +546,8 @@ fun ExitDialog(player: Player,
             ),
 
             modifier = Modifier
-
                 .fillMaxWidth()
-
                 .padding(horizontal = 10.dp)
-
-                // Red shadow to blend with the background glow
-
                 .shadow(30.dp, RoundedCornerShape(32.dp), spotColor = Color.Red)
 
         ) {
@@ -583,9 +573,6 @@ fun ExitDialog(player: Player,
                     letterSpacing = 3.sp
 
                 )
-
-
-
                 Text(
 
                     text = player.name,
