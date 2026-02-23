@@ -2,6 +2,8 @@ package com.example.thegamechanger.remote
 
 import com.example.thegamechanger.model.AddPlayerTableRequest
 import com.example.thegamechanger.model.AddPlayerTableResponse
+import com.example.thegamechanger.model.DealerOnTableRequest
+import com.example.thegamechanger.model.DealerOnTableResponse
 import com.example.thegamechanger.model.LoginRequest
 import com.example.thegamechanger.model.LoginResponse
 import com.example.thegamechanger.model.PlayerListResponse
@@ -36,5 +38,9 @@ interface DealerApiLogin {
         @Body request: AddPlayerTableRequest
     ): Response<AddPlayerTableResponse>
 
+    @POST("api/Manager/DealerOnTable")
+    suspend fun getDealerOnTable(
+        @Body request: DealerOnTableRequest
+    ): DealerOnTableResponse
 
 }

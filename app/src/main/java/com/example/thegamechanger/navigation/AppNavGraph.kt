@@ -1,6 +1,7 @@
 package com.example.thegamechanger.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -10,7 +11,7 @@ import com.example.thegamechanger.ui.theme.IntroScreen
 import com.example.thegamechanger.ui.theme.LoginScreen
 import com.example.thegamechanger.ui.theme.MainScreen
 import com.example.thegamechanger.viewmodel.GameViewModel
-import com.example.thegamechanger.viewmodel.ManagerDashboard
+import com.example.thegamechanger.ui.theme.ManagerDashboard
 
 @Composable
 fun AppNavGraph(){
@@ -45,11 +46,25 @@ fun AppNavGraph(){
             )
         }
         composable("manager_dashboard") {
-            ManagerDashboard(onLogout = {
+
+            // 🔥 Inject the Hilt ViewModel here or let the screen do it
+            ManagerDashboard(
+                viewModel = hiltViewModel(),
+                onLogout = {
+                    navController.navigate("login") {
+                        popUpTo("manager_dashboard") { inclusive = true }
+                    }
+                }
+            )
+         /*  ManagerDashboard(onLogout = {
                 navController.navigate("login") {
                     popUpTo("manager_dashboard") { inclusive = true }
                 }
             })
+
+          */
+
+
         }
         composable("main") {
             MainScreen(

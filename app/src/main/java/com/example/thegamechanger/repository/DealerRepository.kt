@@ -41,55 +41,29 @@ class DealerRepository @Inject constructor(
             UiState.Error(e.message ?: "Unknown Error")
         }
     }
-
-    /*suspend fun getPlayerList(): UiState<List<PlayerDto>> {
-        return try {
-            val response = dealerApi.getPlayerList()
-
-            if (response.isSuccessful && response.body()?.Success == true) {
-                UiState.Success(response.body()!!.Data.data)
-            } else {
-                UiState.Error("Failed to load players")
-            }
-
-        } catch (e: Exception) {
-            UiState.Error(e.message ?: "Unknown Error")
-        }
-    }
-
-     */
     suspend fun getPlayerList(): UiState<List<PlayerDto>> {
         return try {
             val response = dealerApi.getPlayerList()
-
             if (response.isSuccessful && response.body() != null) {
-
                 val body = response.body()!!
-
                 if (body.Success) {
-                    UiState.Success(body.Data.data)   // 🔥 THIS IS IMPORTANT
+                    UiState.Success(body.Data.data)
                 } else {
                     UiState.Error(body.Message)
                 }
-
-
             } else {
                 UiState.Error("Failed to load data")
             }
-
         } catch (e: Exception) {
             UiState.Error(e.localizedMessage ?: "Unknown Error")
         }
 
     }
-
     suspend fun getPlayerOnTable(dealerId: Int): UiState<List<PlayerOnTableItem>> {
         return try {
-
             val response = dealerApi.getPlayerOnTable(
                 PlayerOnTableRequest(DId = dealerId)
             )
-
             if (response.isSuccessful && response.body()?.Success == true) {
                 UiState.Success(response.body()?.Data?.data ?: emptyList())
             } else {
@@ -100,7 +74,6 @@ class DealerRepository @Inject constructor(
             UiState.Error(e.message ?: "Network Error")
         }
     }
-
     suspend fun addPlayerToTable(
         request: AddPlayerTableRequest
     ): Response<AddPlayerTableResponse> {
