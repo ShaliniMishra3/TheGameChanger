@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -62,22 +63,26 @@ fun ManagerDashboard(
     val dealers = viewModel.dealerList
     val tables = viewModel.tableMasters
     var currentTime by remember { mutableStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(Unit) {
+
+     LaunchedEffect(Unit) {
         viewModel.loadDashboard(2)
         while (true) {
             currentTime = System.currentTimeMillis()
             kotlinx.coroutines.delay(1000)
         }
     }
+
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFF660000), Color(0xFF1A0000))))
+            .background(Brush.verticalGradient(listOf(Color(0xFFC90707), Color(0xFF1A0000))))
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
+                .navigationBarsPadding()
                 .padding(horizontal = 20.dp)
         ) {
             Spacer(modifier = Modifier.height(20.dp))
@@ -90,7 +95,11 @@ fun ManagerDashboard(
                     Text(
                         "MANAGEMENT",
                         color = PokerGoldNeon.copy(alpha = 0.6f),
-                        style = androidx.compose.ui.text.TextStyle(letterSpacing = 4.sp, fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                        style = androidx.compose.ui.text.TextStyle(
+                            letterSpacing = 4.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 10.sp
+                        )
                     )
                     Text(
                         "Live Floor",
@@ -126,9 +135,29 @@ fun ManagerDashboard(
                             .background(Color.White.copy(alpha = 0.05f))
                             .padding(16.dp)
                     ) {
-                        Text("DEALER / STATUS", Modifier.weight(1.5f), color = Color.White.collect(0.4f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                        Text("SESSION", Modifier.weight(1f), color = Color.White.collect(0.4f), fontSize = 10.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-                        Text("ACTION", Modifier.weight(1f), color = Color.White.collect(0.4f), fontSize = 10.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
+                        Text(
+                            "DEALER / STATUS",
+                            Modifier.weight(1.5f),
+                            color = PokerGoldNeon,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "SESSION",
+                            Modifier.weight(1f),
+                            color = PokerGoldNeon.copy(alpha = 0.9f),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            "ACTION",
+                            Modifier.weight(1f),
+                            color = PokerGoldNeon,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.End
+                        )
                     }
 
                     dealers.forEachIndexed { index, dealer ->
@@ -136,16 +165,66 @@ fun ManagerDashboard(
                             dealer = dealer,
                             tables = tables,
                             currentTime = currentTime,
-                            onAssign = { /* viewModel.assign(it) */ },
-                            onStop = { /* viewModel.stop(it) */ }
+                            onAssign = { dealerId, table ->
+                                viewModel.assignDealer(
+                                    mId = 2,
+                                    dealerId = dealerId,
+                                    tableId = table.TbId
+                                )
+
+                            },
+                            onStop = { dealerId, tableId, dtbId, coin ->
+
+                                viewModel.removeDealer(
+                                    mId = 2,
+                                    dealerId = dealerId,
+                                    tableId = tableId,
+                                    coin = coin,
+                                    dtbId = dtbId
+                                )
+
+                            }
                         )
                         if (index < dealers.lastIndex) {
-                            HorizontalDivider(color = Color.White.copy(alpha = 0.05f), modifier = Modifier.padding(horizontal = 16.dp))
+                            HorizontalDivider(
+                                color = Color.White.copy(alpha = 0.05f),
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            )
                         }
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 20.dp),
+
+                horizontalArrangement = Arrangement.End
+            ) {
+                Button(
+                    onClick = {
+                        viewModel.loadDashboard(2)
+                    },
+                    modifier = Modifier
+                        .width(150.dp)
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PokerGoldNeon
+                    )
+                ) {
+                    Text(
+                        "REFRESH",
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+
+                        )
+                }
+
+
+            }
         }
     }
 }
@@ -155,22 +234,18 @@ fun DealerRowPremium(
     dealer: DealerTable,
     tables: List<TableMaster>,
     currentTime: Long,
-    onAssign: (TableMaster) -> Unit,
-    onStop: () -> Unit
+   // onAssign: (TableMaster) -> Unit,
+    onAssign: (Int, TableMaster) -> Unit,
+   // onStop: () -> Unit
+    onStop: (Int, Int, Int, Int) -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var showStopDialog by remember { mutableStateOf(false) }
+    var coinText by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
-    // Timer Logic
-   /* val timerText = remember(currentTime) {
-        val entryTime = try { SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.getDefault()).parse(dealer.EntryOnDate)?.time ?: 0L } catch (e: Exception) { 0L }
-        if (dealer.EntryStatus == 1 && entryTime > 0) {
-            val diff = currentTime - entryTime
-            val h = diff / 3600000; val m = (diff % 3600000) / 60000; val s = (diff % 60000) / 1000
-            String.format("%02d:%02d:%02d", h, m, s)
-        } else "--:--:--"
-    }
+    var showDialog by remember { mutableStateOf(false) }
+    var selectedTable by remember { mutableStateOf<TableMaster?>(null) }
 
-    */
-    // Parse API time ONLY once
     val entryTimeMillis = remember(dealer.EntryOnDate) {
         try {
             SimpleDateFormat(
@@ -181,8 +256,7 @@ fun DealerRowPremium(
             0L
         }
     }
-
-// Calculate difference every second
+    // Calculate difference every second
     val timerText = if (dealer.EntryStatus == 1 && entryTimeMillis > 0L) {
         val diff = (currentTime - entryTimeMillis).coerceAtLeast(0L)
         val hours = diff / 3600000
@@ -231,7 +305,7 @@ fun DealerRowPremium(
                     "STOP",
                     color = Color.White,
                     modifier = Modifier
-                        .clickable { onStop() }
+                        .clickable { showStopDialog = true }
                         .background(Color(0xFFFF3D3D).copy(alpha = 0.15f), RoundedCornerShape(8.dp))
                         .border(1.dp, Color(0xFFFF3D3D).copy(alpha = 0.5f), RoundedCornerShape(8.dp))
                         .padding(horizontal = 12.dp, vertical = 6.dp),
@@ -244,286 +318,244 @@ fun DealerRowPremium(
                         "ASSIGN",
                         color = Color.Black,
                         modifier = Modifier
-                            .clickable { expanded = true }
+                            .clickable { showDialog = true }
                             .background(PokerGoldNeon, RoundedCornerShape(8.dp))
                             .padding(horizontal = 12.dp, vertical = 6.dp),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Black
                     )
-                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        tables.filter { it.Status == 1 }.forEach { table ->
-                            DropdownMenuItem(text = { Text(table.Name) }, onClick = { expanded = false; onAssign(table) })
-                        }
-                    }
                 }
             }
         }
     }
-}
-
-fun Color.collect(alpha: Float): Color = this.copy(alpha = alpha)
-
-/*
-@Composable
-fun ManagerDashboard(
-    viewModel: ManagerViewModel = hiltViewModel(),
-    onLogout: () -> Unit
-) {
-
-    LaunchedEffect(Unit) {
-        viewModel.loadDashboard(2)
-    }
-
-    val dealers = viewModel.dealerList
-    val tables = viewModel.tableMasters
-
-    var currentTime by remember { mutableStateOf(System.currentTimeMillis()) }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            currentTime = System.currentTimeMillis()
-            delay(1000)
-        }
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(PokerCrimsonTop, PokerCrimsonBottom)
+    if (showDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showDialog = false },
+            containerColor = Color(0xFFBB1919),
+            shape = RoundedCornerShape(16.dp),
+            title = {
+                Text(
+                    "Assign Table",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
                 )
-            )
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .statusBarsPadding()
-        ) {
-
-            // HEADER
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
+            },
+            text = {
                 Column {
-                    Text(
-                        "MANAGER DASHBOARD",
-                        color = PokerGoldNeon,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 12.sp,
-                        letterSpacing = 3.sp
-                    )
-                    Text(
-                        "Live Records",
-                        color = Color.White,
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Black
-                    )
+                    tables.filter { it.Status == 1 }.forEach { table ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedTable = table }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .background(
+                                        if (selectedTable == table)
+                                            PokerMint
+                                        else
+                                            Color.Gray,
+                                        CircleShape
+                                    )
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = table.Name,
+                                color = Color.White,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
                 }
-
+            },
+            confirmButton = {
                 Button(
-                    onClick = onLogout,
+                    onClick = {
+                        selectedTable?.let { table ->
+
+                            onAssign(
+                                dealer.DId,
+                                table
+                            )
+
+                            showDialog = false
+                            selectedTable = null
+                        }
+                       /* selectedTable?.let {
+                            onAssign(it)
+                            showDialog = false
+                            selectedTable = null
+                        }
+
+                        */
+                    },
+                    enabled = selectedTable != null,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White.copy(0.1f)
+                        containerColor = PokerMint
                     )
                 ) {
-                    Text("EXIT", color = Color.White)
+                    Text("ADD", color = Color.Black)
                 }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // TABLE HEADER
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("DEALER", color = Color.Gray, modifier = Modifier.weight(1.5f))
-                Text("TABLE", color = Color.Gray, modifier = Modifier.weight(1.5f))
+            },
+            dismissButton = {
                 Text(
-                    "TIME",
-                    color = Color.Gray,
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.End
-                )
-                Text(
-                    "ACTION",
-                    color = Color.Gray,
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.End
+                    "Cancel",
+                    modifier = Modifier
+                        .clickable {
+                            showDialog = false
+                            selectedTable = null
+                        }
+                        .padding(8.dp),
+                    color = Color.Gray
                 )
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            dealers.forEach { dealer ->
-                DealerRow(
-                    dealer = dealer,
-                    tables = tables,
-                    currentTime = currentTime
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-        }
-    }
-}
-
-@Composable
-fun DealerRow(
-    dealer: DealerTable,
-    tables: List<TableMaster>,
-    currentTime: Long
-) {
-
-    var expanded by remember { mutableStateOf(false) }
-
-    val entryTimeMillis = remember(dealer.EntryOnDate) {
-        try {
-            SimpleDateFormat(
-                "yyyy-MM-dd'T'HH:mm:ss.SSS",
-                Locale.getDefault()
-            ).parse(dealer.EntryOnDate)?.time ?: 0L
-        } catch (e: Exception) { 0L }
+        )
     }
 
-    val elapsedMillis =
-        if (dealer.EntryStatus == 1)
-            currentTime - entryTimeMillis
-        else 0L
+    if (showStopDialog) {
 
-    val seconds = (elapsedMillis / 1000) % 60
-    val minutes = (elapsedMillis / (1000 * 60)) % 60
-    val hours = (elapsedMillis / (1000 * 60 * 60))
+        androidx.compose.material3.AlertDialog(
 
-    val timerText =
-        if (dealer.EntryStatus == 1)
-            String.format("%02d:%02d:%02d", hours, minutes, seconds)
-        else "--:--:--"
+            onDismissRequest = { showStopDialog = false },
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF3A0F0F)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-    ) {
+            containerColor = Color(0xFFD90404),
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 18.dp, vertical = 20.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-            // LEFT SECTION
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-
+            title = {
                 Text(
-                    text = dealer.DealerName,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 17.sp
+                    "Remove Dealer",
+                    color = Color.White
                 )
+            },
 
-                Spacer(modifier = Modifier.height(6.dp))
+            text = {
 
-                Text(
-                    text = if (dealer.EntryStatus == 1)
-                        dealer.TableName
-                    else
-                        "Not Assigned",
-                    color = PokerGoldNeon,
-                    fontSize = 14.sp
-                )
-            }
+                Column {
 
-            // RIGHT SECTION
-            Column(
-                horizontalAlignment = Alignment.End
-            ) {
+                    Text(
+                        "Enter Coin Amount",
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    androidx.compose.material3.OutlinedTextField(
+                        value = coinText,
+                        onValueChange = { coinText = it },
+                        singleLine = true
 
-                Text(
-                    text = timerText,
-                    color = PokerMint,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 16.sp
-                )
+                    )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                }
 
-                if (dealer.EntryStatus == 1) {
+            },
 
-                    Button(
-                        onClick = { /* STOP API */ },
-                        shape = RoundedCornerShape(50),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Red
-                        ),
-                        contentPadding = PaddingValues(
-                            horizontal = 22.dp,
-                            vertical = 8.dp
+          /*  confirmButton = {
+
+                Button(
+
+                    onClick = {
+
+                        val coinValue =
+                            coinText.toIntOrNull() ?: 0
+
+                        onStop(
+
+                            dealer.DId,
+                            dealer.TbId,
+                            dealer.dtbId,
+                            coinValue
+
                         )
-                    ) {
-                        Text(
-                            "STOP",
-                            color = Color.White,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
 
-                } else {
+                        showStopDialog = false
+                        coinText = ""
 
-                    Box {
+                    },
 
-                        Button(
-                            onClick = { expanded = true },
-                            shape = RoundedCornerShape(50),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = PokerGoldNeon
-                            ),
-                            contentPadding = PaddingValues(
-                                horizontal = 20.dp,
-                                vertical = 8.dp
-                            )
-                        ) {
-                            Text(
-                                "ADD TABLE",
-                                color = Color.Black,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Gray
+                    )
+
+                ) {
+
+                    Text("REMOVE")
+
+                }
+
+            },
+
+           */
+            confirmButton = {
+
+                Button(
+
+                    onClick = {
+
+                        if (coinText.isBlank()) {
+
+                            android.widget.Toast
+                                .makeText(
+                                    context,
+                                    "Please enter coin amount",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+
+                            return@Button
                         }
 
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
-                        ) {
-                            tables.filter { it.Status == 1 }.forEach { table ->
-                                DropdownMenuItem(
-                                    text = { Text(table.Name) },
-                                    onClick = {
-                                        expanded = false
-                                        // Assign API
-                                    }
-                                )
-                            }
-                        }
-                    }
+                        val coinValue = coinText.toInt()
+
+                        onStop(
+
+                            dealer.DId,
+                            dealer.TbId,
+                            dealer.dtbId,
+                            coinValue
+
+                        )
+
+                        showStopDialog = false
+                        coinText = ""
+
+                    },
+
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Yellow
+                    )
+
+                ) {
+
+                    Text("REMOVE")
+
                 }
+
+            },
+            dismissButton = {
+                Text(
+
+                    "Cancel",
+
+                    modifier = Modifier
+                        .clickable {
+                            showStopDialog = false
+                            coinText = ""
+                        }
+                        .padding(8.dp),
+
+                    color = Color.Gray
+
+                )
+
             }
-        }
+
+        )
     }
+
 }
+fun Color.collect(alpha: Float): Color = this.copy(alpha = alpha)
 
 
- */
 
 
 

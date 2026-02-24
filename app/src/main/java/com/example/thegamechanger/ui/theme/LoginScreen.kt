@@ -64,22 +64,32 @@ import com.example.thegamechanger.UiState
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
-    onLoginSuccess: (Boolean) -> Unit
+    onLoginSuccess: (Int, String, Boolean) -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var selectedRole by remember { mutableStateOf("Dealer") }
     var passwordVisible by remember { mutableStateOf(false) }
     val loginState by viewModel.loginState.collectAsState()
-
-
+    val navigateToMain by viewModel.navigateToMain.collectAsState()
     val navigateToManager by viewModel.navigateToManager.collectAsState()
-    LaunchedEffect(navigateToManager) {
-        navigateToManager?.let {
-            onLoginSuccess(it)
+
+    LaunchedEffect(navigateToMain, navigateToManager) {
+
+        navigateToMain?.let { (dealerId, dealerName) ->
+            onLoginSuccess(dealerId,dealerName,true) // Dealer
             viewModel.resetNavigation()
         }
+
+       if (navigateToManager == true) {
+            onLoginSuccess(0,"",false) // Manager
+            viewModel.resetNavigation()
+        }
+
+
     }
+
+
     val focusManager = LocalFocusManager.current
     Box(
         modifier = Modifier
@@ -252,7 +262,36 @@ fun LoginScreen(
                     }
                 }
             }
-            when (loginState) {
+           /* when (loginState) {
+
+                is UiState.Loading -> {
+                    val errorMessage = (loginState as UiState.Error).message ?: "Login failed"
+
+                    Text(
+                        text = errorMessage,
+                        color = Color.Yellow
+                    )
+                }
+
+                is UiState.Error -> {
+                    Text(
+                        text = (loginState as UiState.Error).message,
+                        color = Color.White
+                    )
+                }
+
+                is UiState.Success -> {
+                    Text(
+                        text = "Login Successful",
+                        color = Color.Green
+                    )
+                }
+
+                else -> {}
+            }
+
+            */
+            when (val state = loginState) {
 
                 is UiState.Loading -> {
                     Text(
@@ -263,8 +302,8 @@ fun LoginScreen(
 
                 is UiState.Error -> {
                     Text(
-                        text = (loginState as UiState.Error).message,
-                        color = Color.White
+                        text = state.message ?: "Login failed",
+                        color = Color.Red
                     )
                 }
 

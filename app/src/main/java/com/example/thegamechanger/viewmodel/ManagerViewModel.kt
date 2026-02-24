@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.thegamechanger.model.AddDealerOnTableRequest
 import com.example.thegamechanger.model.DealerOnTableRequest
 import com.example.thegamechanger.model.DealerTable
 import com.example.thegamechanger.model.TableMaster
@@ -24,6 +25,7 @@ class ManagerViewModel @Inject constructor(
     var tableMasters by mutableStateOf<List<TableMaster>>(emptyList())
         private set
 
+  /*
     fun loadDashboard(mId: Int) {
         viewModelScope.launch {
             try {
@@ -38,5 +40,103 @@ class ManagerViewModel @Inject constructor(
                 e.printStackTrace()
             }
         }
+    }
+
+   */
+  fun loadDashboard(mId: Int) {
+      viewModelScope.launch {
+          try {
+
+              val response = api.getDealerOnTable(
+                  DealerOnTableRequest(mId)
+              )
+
+              if (response.Success) {
+
+                  dealerList =
+                      response.Data.DealerTables
+                          .sortedByDescending { it.EntryStatus }
+
+                  tableMasters = response.Data.TableMasters
+              }
+
+          } catch (e: Exception) {
+              e.printStackTrace()
+          }
+      }
+  }
+    fun assignDealer(
+        mId: Int,
+        dealerId: Int,
+        tableId: Int
+    ) {
+        viewModelScope.launch {
+            try {
+
+                val response = api.addDealerOnTable(
+                    AddDealerOnTableRequest(
+                        MId = mId,
+                        DId = dealerId,
+                        TbId = tableId,
+                        Coin = 0,
+                        IsAdd = 1,
+                        dtbId = 0
+                    )
+                )
+
+                if (response.Success) {
+                    // Refresh Dashboard
+                    loadDashboard(mId)
+
+                }
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+    fun removeDealer(
+
+        mId: Int,
+        dealerId: Int,
+        tableId: Int,
+        coin: Int,
+        dtbId: Int
+
+    ) {
+
+        viewModelScope.launch {
+
+            try {
+
+                val response = api.addDealerOnTable(
+
+                    AddDealerOnTableRequest(
+
+                        MId = mId,
+                        DId = dealerId,
+                        TbId = tableId,
+                        Coin = coin,
+                        IsAdd = 0,
+                        dtbId = dtbId
+
+                    )
+
+                )
+
+                if (response.Success) {
+
+                    loadDashboard(mId)
+
+                }
+
+            } catch (e: Exception) {
+
+                e.printStackTrace()
+
+            }
+
+        }
+
     }
 }

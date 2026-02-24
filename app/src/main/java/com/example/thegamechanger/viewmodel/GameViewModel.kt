@@ -13,8 +13,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import androidx.compose.runtime.State
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.example.thegamechanger.model.AddPlayerResult
 import com.example.thegamechanger.model.AddPlayerTableRequest
+import com.example.thegamechanger.model.GameStartRequest
+import com.example.thegamechanger.model.GameStartResponse
+import com.example.thegamechanger.model.PlayerOnTableItem
 import kotlinx.coroutines.flow.StateFlow
 
 @HiltViewModel
@@ -35,79 +39,56 @@ class GameViewModel @Inject constructor(
 
     private val _tableName = mutableStateOf("")
     val tableName: State<String> = _tableName
-    private val _players = mutableStateListOf<Player>()
-    val players: List<Player> = _players
-    private val _playerOnTableList = mutableStateListOf<Player>()
-
+    private val _playersOnTable = mutableStateListOf<PlayerOnTableItem>()
+    val playersOnTable: SnapshotStateList<PlayerOnTableItem> = _playersOnTable
     private val _availablePlayers =
         MutableStateFlow<UiState<List<PlayerDto>>>(UiState.Idle)
     val availablePlayers = _availablePlayers.asStateFlow()
-
-   /*init {
-        _players.add(Player("Dealer", 15000))
-    }
-
-    */
-
+    private val _gameState = MutableStateFlow<UiState<GameStartResponse>?>(null)
+    val gameState = _gameState
+    var currentTwid = 0
    private val _tablePlayers =
        MutableStateFlow<List<AddPlayerResult>>(emptyList())
-    val tablePlayers: StateFlow<List<AddPlayerResult>> = _tablePlayers
-
     private fun addPlayerToTableList(player: AddPlayerResult) {
         _tablePlayers.value = _tablePlayers.value + player
     }
-
-
     fun loadPlayers() {
         viewModelScope.launch {
             _availablePlayers.value = UiState.Loading
             _availablePlayers.value = repository.getPlayerList()
         }
     }
-
-
-
     fun clearAddPlayerState() {
         _addPlayerState.value = UiState.Idle
     }
-    fun updateDealerCommission(winAmount: Int) {
-        val dealerIndex = _players.indexOfFirst {
-            it.name == _dealerName.value
-        }
-        if (dealerIndex != -1) {
-            val commission = (winAmount * 0.10).toInt()
-            val dealer = _players[dealerIndex]
-
-            _players[dealerIndex] =
-                dealer.copy(amount = dealer.amount + commission)
-        }
-    }
     fun fetchPlayerOnTable(dealerId: Int) {
+
         viewModelScope.launch {
 
             val result = repository.getPlayerOnTable(dealerId)
+
             if (result is UiState.Success) {
-                _players.clear()
+
+                _playersOnTable.clear()
+
                 if (result.data.isNotEmpty()) {
+
                     val first = result.data.first()
-                    _dealerName.value = first.DealerName
-                    _tableName.value = first.TableName
+
+                    _dealerName.value = first.DealerName.toString()
+                    _tableName.value = first.TableName.toString()
                     _dealerId.value = first.DId
                     _tableId.value = first.tbId
                 }
 
-                result.data.forEach { item ->
-                    _players.add(
-                        Player(
-                            pId = item.PId,
-                            name = item.PlayerName,
-                            amount = item.CoinEntry.toInt()
-                        )
-                    )
-                }
+                _playersOnTable.addAll(result.data)
+
+                println("TABLE SIZE = ${_playersOnTable.size}")
             }
         }
     }
+
+
 
     fun addPlayerToTable(
         dId: Int,
@@ -168,5 +149,62 @@ class GameViewModel @Inject constructor(
         current?.removeAll { it.PId == pId }
         _availablePlayers.value = UiState.Success(current ?: emptyList())
     }
+    fun setDealer(dealerId:Int,dealerName:String){
 
+        _dealerId.value = dealerId
+        _dealerName.value = dealerName
+
+    }
+    fun startGame() {
+
+        viewModelScope.launch {
+
+            _gameState.value = UiState.Loading
+
+            val result = repository.gameStart(
+                GameStartRequest(
+                    DId = dealerId.value,
+                    tbId = tableId.value,
+                    IsStart = 1,
+                    WinningCoin = "0",
+                    Twid = 0
+                )
+            )
+
+            when(result){
+
+                is UiState.Success ->{
+
+                    currentTwid = result.data.Data.Twid
+
+                    _gameState.value = result
+                }
+
+                is UiState.Error ->{
+                    _gameState.value = result
+                }
+
+                else ->{}
+            }
+        }
+    }
+    fun stopGame(winningAmount:String){
+
+        viewModelScope.launch {
+
+            _gameState.value = UiState.Loading
+
+            val result = repository.gameStart(
+                GameStartRequest(
+                    DId = dealerId.value,
+                    tbId = tableId.value,
+                    IsStart = 0,
+                    WinningCoin = winningAmount,
+                    Twid = currentTwid
+                )
+            )
+
+            _gameState.value = result
+        }
+    }
 }

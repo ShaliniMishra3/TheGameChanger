@@ -3,6 +3,8 @@ package com.example.thegamechanger.repository
 import com.example.thegamechanger.UiState
 import com.example.thegamechanger.model.AddPlayerTableRequest
 import com.example.thegamechanger.model.AddPlayerTableResponse
+import com.example.thegamechanger.model.GameStartRequest
+import com.example.thegamechanger.model.GameStartResponse
 import com.example.thegamechanger.model.LoginRequest
 import com.example.thegamechanger.model.LoginResponse
 import com.example.thegamechanger.model.PlayerDto
@@ -78,5 +80,14 @@ class DealerRepository @Inject constructor(
         request: AddPlayerTableRequest
     ): Response<AddPlayerTableResponse> {
         return dealerApi.addPlayerToTable(request)
+    }
+
+    suspend fun gameStart(request: GameStartRequest): UiState<GameStartResponse> {
+        return try {
+            val response = dealerApi.gameStart(request)
+            UiState.Success(response)
+        } catch (e: Exception) {
+            UiState.Error(e.message ?: "Game API Error")
+        }
     }
 }

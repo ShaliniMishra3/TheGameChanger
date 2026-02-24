@@ -20,7 +20,7 @@ data class PlayerOnTableItem(
     val CoinExit: Double,
     val ExitDate: String?,
     val ExitStatus: Int,
-    val PlayerName: String,
-    val DealerName: String,
-    val TableName: String
+    val PlayerName: String?,
+    val DealerName: String?,
+    val TableName: String?
 )

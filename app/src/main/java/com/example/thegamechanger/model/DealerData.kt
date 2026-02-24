@@ -9,5 +9,6 @@ class DealerData (
     val msg: String,
     val DId: Int,
     val Email: String,
-    val Password: String
+    val Password: String,
+    val Name: String?
 )

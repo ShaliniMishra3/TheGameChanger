@@ -2,7 +2,6 @@ package com.example.thegamechanger.ui.theme
 
 
 
-import android.view.Surface
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
@@ -17,7 +16,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,26 +28,21 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -59,6 +52,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.thegamechanger.UiState
+import com.example.thegamechanger.model.PlayerOnTableItem
 import com.example.thegamechanger.viewmodel.GameViewModel
 import com.example.thegamechanger.viewmodel.Player
 
@@ -77,23 +71,25 @@ val PokerCrimsonTop = Color(0xFFE30B0B)    // Rich Blood Red
 val PokerCrimsonBottom = Color(0xFFC40505) // Deep Bruised Red (Replaces Black)
   // The "Loud" Accent
 val PokerGold = Color(0xFFFFD700)
-val PokerCardSurface = Color(0xFF420000).copy(alpha = 0.6f) // Dark Red Glass
 val PokerMint = Color(0xFF00FFC8)
-val PokerDeepBlood = Color(0xFF660000)   // Darker base
 val PokerVibrantRed = Color(0xFFFF0000)  // Loudest Red
-val PokerGlassDark = Color(0xFF0D0D0D).copy(alpha = 0.95f) // Less transparent for contrast
 
-// New Color for Dialog Surface (Deep Maroon with Transparency)
 val PokerDialogGlass = Color(0xFF420000).copy(alpha = 0.92f)
 
 @Composable
 fun MainScreen(
+    dealerId: Int,
+    dealerName: String,
     viewModel: GameViewModel,
     onAddPersonClick: () -> Unit,
     onBack: () -> Unit
 ) {
     val addState by viewModel.addPlayerState.collectAsState()
     val context = LocalContext.current
+    val gameState by viewModel.gameState.collectAsState()
+    var gameStarted by remember { mutableStateOf(false) }
+    var isSettling by remember { mutableStateOf(false) }
+    var gameCompleted by remember { mutableStateOf(false) }
 
     LaunchedEffect(addState) {
         if (addState is UiState.Success) {
@@ -105,17 +101,52 @@ fun MainScreen(
             viewModel.clearAddPlayerState()
         }
     }
-    var gameStarted by remember { mutableStateOf(false) }
-    var isSettling by remember { mutableStateOf(false) }
-    var gameCompleted by remember { mutableStateOf(false) }
-   val players = viewModel.players
+    LaunchedEffect(gameState){
+
+        when(gameState){
+
+            is UiState.Success ->{
+
+                val msg = (gameState as UiState.Success).data.Data.Msg
+
+                Toast.makeText(context,msg,Toast.LENGTH_LONG).show()
+
+                val isStart =
+                    (gameState as UiState.Success).data.Data.IsStart
+
+                if (isStart == 1) {
+                    gameStarted = true
+                    gameCompleted = false
+                } else {
+                    gameStarted = false
+                    gameCompleted = false // ✅ Prevent dialog reopen
+                }
+            }
+
+            is UiState.Error ->{
+
+                Toast.makeText(
+                    context,
+                    (gameState as UiState.Error).message,
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+
+            else->{}
+        }
+    }
+
+    val players = viewModel.playersOnTable
     var winAmount by remember { mutableStateOf("") }
     var showExitDialog by remember { mutableStateOf(false) }
-    var selectedPlayer by remember { mutableStateOf<Player?>(null) }
-    val dealerName by viewModel.dealerName
+    var selectedPlayer by remember { mutableStateOf<PlayerOnTableItem?>(null) }
+
     val tableName by viewModel.tableName
-    LaunchedEffect(Unit) {
-        viewModel.fetchPlayerOnTable(dealerId = 2)
+
+    LaunchedEffect(dealerId) {
+        viewModel.setDealer(dealerId,dealerName)
+        viewModel.fetchPlayerOnTable(dealerId)
+
     }
     BackHandler {
         onBack()
@@ -244,7 +275,7 @@ fun MainScreen(
             Spacer(modifier = Modifier.height(30.dp))
 
             // ---- THE GLASS TABLE ----
-            if (players.size > 1) {
+            if (players.isNotEmpty()) {
                 PremiumTable(
                     players = players,
                     onExitClick = { player ->
@@ -262,8 +293,10 @@ fun MainScreen(
             ActionButtons(
                 gameStarted = gameStarted,
                 isSettling = isSettling,
-                onStart = { gameStarted = true
-                          isSettling=false},
+                onStart = { /*gameStarted = true
+                          isSettling=false*/
+                    viewModel.startGame()
+                          },
                 onComplete = { gameCompleted = true }
             )
 
@@ -272,8 +305,9 @@ fun MainScreen(
                     winAmount = winAmount,
                     onAmountChange = { winAmount = it },
                     onSubmit = {
-                        val amount = winAmount.toIntOrNull() ?: 0
-                        viewModel.updateDealerCommission(amount)
+                        viewModel.stopGame(winAmount)
+                        //val amount = winAmount.toIntOrNull() ?: 0
+                       // viewModel.updateDealerCommission(amount)
                         winAmount = ""
                         gameCompleted = false
                         gameStarted = false
@@ -292,7 +326,7 @@ fun MainScreen(
 
                 viewModel.addPlayerToTable(
                     dId = viewModel.dealerId.value,
-                    pId = selectedPlayer!!.pId,   // ⚠ make sure Player has pId
+                    pId = selectedPlayer!!.PId,   // ⚠ make sure Player has pId
                     tbId = viewModel.tableId.value,
                     coin = finalAmount.toDouble(),
                     isAdd = 0   // 🔥 EXIT CASE
@@ -306,7 +340,7 @@ fun MainScreen(
 }
 
 @Composable
-fun PremiumTable(players: List<Player>, onExitClick: (Player) -> Unit) {
+fun PremiumTable(players: List<PlayerOnTableItem>, onExitClick: (PlayerOnTableItem) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -320,10 +354,9 @@ fun PremiumTable(players: List<Player>, onExitClick: (Player) -> Unit) {
             ),
         shape = RoundedCornerShape(30.dp),
         colors = CardDefaults.cardColors(containerColor = PokerGlass),
-        elevation = CardDefaults.cardElevation(0.dp) // Use shadow modifier instead for better control
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column(modifier = Modifier.padding(bottom = 10.dp)) {
-            // --- HEADER WITH UNDERLINE ---
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -345,7 +378,7 @@ fun PremiumTable(players: List<Player>, onExitClick: (Player) -> Unit) {
 
 
 @Composable
-fun PremiumTableRow(player: Player, isLast: Boolean, onExit: () -> Unit) {
+fun PremiumTableRow(player: PlayerOnTableItem, isLast: Boolean, onExit: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -353,17 +386,19 @@ fun PremiumTableRow(player: Player, isLast: Boolean, onExit: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Player Name in clean White
-        Text(
-            text = player.name,
-            modifier = Modifier.weight(1.2f),
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            fontSize = 17.sp
-        )
+        player.PlayerName?.let {
+            Text(
+                text = it,
+                modifier = Modifier.weight(1.2f),
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 17.sp
+            )
+        }
 
         // Amount in Glow Gold
         Text(
-            text = "₹${player.amount}",
+            text = "₹${player.CoinEntry.toInt()}",
             modifier = Modifier.weight(1f),
             color = PokerGoldNeon,
             fontWeight = FontWeight.Black,
@@ -513,11 +548,12 @@ fun EmptyTablePlaceholder() {
 
 @Composable
 
-fun ExitDialog(player: Player,
+fun ExitDialog(player: PlayerOnTableItem,
                onDismiss: () -> Unit,
                onSubmit: (Int) -> Unit) {
 
-    var remaining by remember { mutableStateOf(player.amount.toString()) }
+    var remaining by remember {     mutableStateOf(player.CoinEntry.toInt().toString())
+    }
 
 
 
@@ -573,19 +609,21 @@ fun ExitDialog(player: Player,
                     letterSpacing = 3.sp
 
                 )
-                Text(
+                player.PlayerName?.let {
+                    Text(
 
-                    text = player.name,
+                        text = it,
 
-                    fontSize = 34.sp,
+                        fontSize = 34.sp,
 
-                    fontWeight = FontWeight.Black,
+                        fontWeight = FontWeight.Black,
 
-                    color = Color.White,
+                        color = Color.White,
 
-                    modifier = Modifier.padding(vertical = 4.dp)
+                        modifier = Modifier.padding(vertical = 4.dp)
 
-                )
+                    )
+                }
                 Spacer(modifier = Modifier.height(20.dp))
                 OutlinedTextField(
 
