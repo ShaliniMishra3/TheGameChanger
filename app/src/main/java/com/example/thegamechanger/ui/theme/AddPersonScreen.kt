@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BasicAlertDialog
@@ -32,7 +31,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -47,11 +45,9 @@ import androidx.compose.ui.unit.sp
 import com.example.thegamechanger.UiState
 import com.example.thegamechanger.model.PlayerDto
 import com.example.thegamechanger.viewmodel.GameViewModel
-
 @Composable
 fun AddPersonScreen(
     viewModel: GameViewModel,
-
     onBack: () -> Unit
 ) {
     val playerState by viewModel.availablePlayers.collectAsState()
@@ -61,17 +57,17 @@ fun AddPersonScreen(
     val context = LocalContext.current
     val tableId by viewModel.tableId
     LaunchedEffect(Unit) {
+        viewModel.fetchPlayerOnTable(dealerId)
         viewModel.loadPlayers()
     }
+
     LaunchedEffect(addState) {
-
         when (addState) {
-
             is UiState.Success -> {
                 val msg = (addState as UiState.Success).data.Msg
                 Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-                viewModel.clearAddPlayerState()   // ✅ RESET
-                                      // ✅ navigate back safely
+                viewModel.fetchPlayerOnTable(dealerId) // ⭐ IMPORTANT
+                viewModel.clearAddPlayerState()
             }
             is UiState.Error -> {
                 Toast.makeText(
@@ -199,17 +195,12 @@ fun AddPersonScreen(
 
         }
     }
-
-
-
     if (showDialog && selectedPlayerName != null) {
         AddPlayerDialog(
             playerName = selectedPlayerName!!,
             onDismiss = { showDialog = false },
             onAdd = { amountString ->
-
                 val amount = amountString.toIntOrNull() ?: 0
-
                 selectedPlayerId?.let { pId ->
                     viewModel.addPlayerToTable(
                         dId = dealerId,
@@ -219,14 +210,12 @@ fun AddPersonScreen(
                         isAdd = 1
                     )
                 }
-
                 showDialog = false
             }
         )
     }
 
 }
-
 @Composable
 fun DealerRow(
     dealerName: String,
@@ -257,16 +246,12 @@ fun DealerRow(
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
-
                 Text(
                     text = mobile,
                     fontSize = 13.sp,
                     color = Color.White.copy(alpha = 0.6f)
                 )
             }
-
-
-            // Gold Plus Icon
             Box(
                 modifier = Modifier
                     .size(36.dp)

@@ -16,6 +16,7 @@ data class DealerTable(
     val DealerName: String,
     val TbId: Int,
     val TableName: String,
+    val commission:Int,
     val EntryOnDate: String,
     val EntryStatus: Int
 )

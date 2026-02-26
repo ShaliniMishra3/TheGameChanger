@@ -1,14 +1,16 @@
 package com.example.thegamechanger.model
 
-class PlayerOnTableResponse(
+data class PlayerOnTableResponse(
     val Success: Boolean,
     val Message: String,
     val Data: PlayerOnTableData?
 )
-data class PlayerOnTableData(
-    val data: List<PlayerOnTableItem>
-)
 
+data class PlayerOnTableData(
+    val DealerTables: List<PlayerOnTableItem>,
+    val DealerDashboard: List<DealerDashboardItem>
+
+)
 data class PlayerOnTableItem(
     val ptbId: Int,
     val DId: Int,
@@ -23,4 +25,13 @@ data class PlayerOnTableItem(
     val PlayerName: String?,
     val DealerName: String?,
     val TableName: String?
+
+)
+data class DealerDashboardItem(
+    val DId: Int,
+    val DealerName: String,
+    val tbId: Int,
+    val TableName: String,
+    val EntryOnDate: String
+
 )

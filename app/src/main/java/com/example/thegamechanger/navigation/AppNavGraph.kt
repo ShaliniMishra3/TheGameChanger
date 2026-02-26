@@ -1,6 +1,8 @@
 package com.example.thegamechanger.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -59,7 +61,6 @@ fun AppNavGraph(){
 
         }
         composable("manager_dashboard") {
-            // 🔥 Inject the Hilt ViewModel here or let the screen do it
             ManagerDashboard(
                 viewModel = hiltViewModel(),
                 onLogout = {
@@ -69,15 +70,7 @@ fun AppNavGraph(){
                 }
             )
         }
-       /* composable("main") {
-            MainScreen(
-                viewModel = gameViewModel,
-                onAddPersonClick = { navController.navigate("add_person") },
-                onBack = { navController.navigate("login"){
-                    popUpTo("main"){inclusive=true}
-                } }
-            )
-        }*/
+
         composable(
             "main/{dealerId}/{dealerName}",
             arguments = listOf(
@@ -88,12 +81,20 @@ fun AppNavGraph(){
 
             val dealerId = backStackEntry.arguments?.getInt("dealerId") ?: 0
             val dealerName = backStackEntry.arguments?.getString("dealerName") ?: ""
+            val tableId by gameViewModel.tableId   // ✅ FIX
 
+            gameViewModel.setDealer(dealerId, dealerName)
+
+            // 🔥 Load table players when MainScreen opens
+            LaunchedEffect(Unit) {
+                gameViewModel.fetchPlayerOnTable(dealerId)
+            }
             MainScreen(
                 dealerId = dealerId,
                 dealerName = dealerName,
                 viewModel = gameViewModel,
-                onAddPersonClick = { navController.navigate("add_person") },
+                onAddPersonClick = {// navController.navigate("add_person")
+                    navController.navigate("add_person/$dealerId")  },
                 onBack = {
                     navController.navigate("login") {
                         popUpTo("main/$dealerId/$dealerName") { inclusive = true }
@@ -101,7 +102,34 @@ fun AppNavGraph(){
                 }
             )
         }
-        composable("add_person") {
+       /* composable("add_person") {
+            AddPersonScreen(
+                viewModel = gameViewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        */
+        composable(
+            "add_person/{dealerId}",
+            arguments = listOf(
+                navArgument("dealerId") {
+                    type = NavType.IntType
+                }
+            )
+        ) { backStackEntry ->
+
+            val dealerId =
+                backStackEntry.arguments?.getInt("dealerId") ?: 0
+
+            gameViewModel.setDealer(dealerId, "")
+
+            // Load tableId from API
+            LaunchedEffect(Unit) {
+                gameViewModel.fetchPlayerOnTable(dealerId)
+            }
+
+
             AddPersonScreen(
                 viewModel = gameViewModel,
                 onBack = { navController.popBackStack() }

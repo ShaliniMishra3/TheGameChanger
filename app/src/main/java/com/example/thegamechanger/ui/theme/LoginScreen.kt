@@ -208,7 +208,7 @@ fun LoginScreen(
                             unfocusedTextColor = Color.White
                         )
                     )
-                    //new one
+
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Row(
@@ -249,7 +249,7 @@ fun LoginScreen(
                             .shadow(20.dp, RoundedCornerShape(20.dp), spotColor = Color.Black),
                         shape = RoundedCornerShape(20.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.White, // White pops most against red
+                            containerColor = Color.White,
                             contentColor = Color.Black
                         )
                     ) {
@@ -262,35 +262,7 @@ fun LoginScreen(
                     }
                 }
             }
-           /* when (loginState) {
 
-                is UiState.Loading -> {
-                    val errorMessage = (loginState as UiState.Error).message ?: "Login failed"
-
-                    Text(
-                        text = errorMessage,
-                        color = Color.Yellow
-                    )
-                }
-
-                is UiState.Error -> {
-                    Text(
-                        text = (loginState as UiState.Error).message,
-                        color = Color.White
-                    )
-                }
-
-                is UiState.Success -> {
-                    Text(
-                        text = "Login Successful",
-                        color = Color.Green
-                    )
-                }
-
-                else -> {}
-            }
-
-            */
             when (val state = loginState) {
 
                 is UiState.Loading -> {

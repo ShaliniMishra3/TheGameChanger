@@ -10,6 +10,7 @@ import com.example.thegamechanger.model.LoginResponse
 import com.example.thegamechanger.model.PlayerDto
 import com.example.thegamechanger.model.PlayerOnTableItem
 import com.example.thegamechanger.model.PlayerOnTableRequest
+import com.example.thegamechanger.model.PlayerOnTableResponse
 import com.example.thegamechanger.remote.DealerApiLogin
 import retrofit2.Response
 import javax.inject.Inject
@@ -61,12 +62,26 @@ class DealerRepository @Inject constructor(
         }
 
     }
-    suspend fun getPlayerOnTable(dealerId: Int): UiState<List<PlayerOnTableItem>> {
+    suspend fun getPlayerOnTable(dealerId: Int): UiState<PlayerOnTableResponse> {
         return try {
             val response = dealerApi.getPlayerOnTable(
                 PlayerOnTableRequest(DId = dealerId)
             )
-            if (response.isSuccessful && response.body()?.Success == true) {
+            if (response.isSuccessful && response.body() != null) {
+
+                UiState.Success(response.body()!!)
+
+            } else {
+
+                UiState.Error("API Error")
+
+            }
+
+        } catch (e: Exception) {
+            UiState.Error(e.message ?: "Network Error")
+
+        }
+           /* if (response.isSuccessful && response.body()?.Success == true) {
                 UiState.Success(response.body()?.Data?.data ?: emptyList())
             } else {
                 UiState.Error(response.body()?.Message ?: "Something went wrong")
@@ -75,6 +90,8 @@ class DealerRepository @Inject constructor(
         } catch (e: Exception) {
             UiState.Error(e.message ?: "Network Error")
         }
+
+            */
     }
     suspend fun addPlayerToTable(
         request: AddPlayerTableRequest

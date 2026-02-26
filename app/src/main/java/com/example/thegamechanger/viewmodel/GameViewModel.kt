@@ -20,6 +20,7 @@ import com.example.thegamechanger.model.GameStartRequest
 import com.example.thegamechanger.model.GameStartResponse
 import com.example.thegamechanger.model.PlayerOnTableItem
 import kotlinx.coroutines.flow.StateFlow
+import kotlin.collections.emptyList
 
 @HiltViewModel
 class GameViewModel @Inject constructor(
@@ -34,13 +35,16 @@ class GameViewModel @Inject constructor(
     private val _dealerId = mutableStateOf(0)
     val dealerId: State<Int> = _dealerId
 
-    private val _tableId = mutableStateOf(0)
-    val tableId: State<Int> = _tableId
+
 
     private val _tableName = mutableStateOf("")
     val tableName: State<String> = _tableName
-    private val _playersOnTable = mutableStateListOf<PlayerOnTableItem>()
-    val playersOnTable: SnapshotStateList<PlayerOnTableItem> = _playersOnTable
+   // private val _playersOnTable = mutableStateListOf<PlayerOnTableItem>()
+   // val playersOnTable: SnapshotStateList<PlayerOnTableItem> = _playersOnTable
+   private val _playersOnTable =
+       MutableStateFlow<List<PlayerOnTableItem>>(emptyList())
+
+    val playersOnTable = _playersOnTable.asStateFlow()
     private val _availablePlayers =
         MutableStateFlow<UiState<List<PlayerDto>>>(UiState.Idle)
     val availablePlayers = _availablePlayers.asStateFlow()
@@ -61,7 +65,43 @@ class GameViewModel @Inject constructor(
     fun clearAddPlayerState() {
         _addPlayerState.value = UiState.Idle
     }
+    var tableId = mutableStateOf(0)
+    fun setTableId(id: Int) {
+        tableId.value = id
+    }
+
+
     fun fetchPlayerOnTable(dealerId: Int) {
+
+        viewModelScope.launch {
+
+            val result = repository.getPlayerOnTable(dealerId)
+
+            if (result is UiState.Success) {
+
+                val dealerTables = result.data.Data?.DealerTables ?: emptyList()
+
+                _playersOnTable.value = dealerTables
+
+                val dashboard = result.data.Data?.DealerDashboard?.firstOrNull()
+
+                if (dashboard != null) {
+
+                    _dealerName.value = dashboard.DealerName
+
+                    _tableName.value = dashboard.TableName
+
+                    _dealerId.value = dashboard.DId
+
+                    tableId.value = dashboard.tbId
+
+                }
+
+            }
+
+        }
+    }
+    /*fun fetchPlayerOnTable(dealerId: Int) {
 
         viewModelScope.launch {
 
@@ -88,8 +128,7 @@ class GameViewModel @Inject constructor(
         }
     }
 
-
-
+     */
     fun addPlayerToTable(
         dId: Int,
         pId: Int,
@@ -98,11 +137,8 @@ class GameViewModel @Inject constructor(
         isAdd: Int = 1
     ) {
         viewModelScope.launch {
-
             _addPlayerState.value = UiState.Loading
-
             try {
-
                 val response = repository.addPlayerToTable(
                     AddPlayerTableRequest(
                         DId = dId,
@@ -112,7 +148,6 @@ class GameViewModel @Inject constructor(
                         IsAdd = isAdd
                     )
                 )
-
                 if (response.isSuccessful && response.body()?.Success == true) {
 
                     val result = response.body()?.Data?.data
@@ -128,10 +163,7 @@ class GameViewModel @Inject constructor(
                         // Add to table list
                         addPlayerToTableList(result)
 
-                        if (result.Result_status == 0) {
-                            // Refresh table always
-                            fetchPlayerOnTable(dId)
-                        }
+
                     }
 
                 } else {

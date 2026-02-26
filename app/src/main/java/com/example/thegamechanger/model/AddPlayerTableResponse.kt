@@ -6,7 +6,6 @@ data class AddPlayerTableResponse(
     val Message: String,
     val Data: AddPlayerData?
 )
-
 data class AddPlayerData(
     val data: AddPlayerResult?
 )

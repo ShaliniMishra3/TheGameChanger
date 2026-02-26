@@ -1,5 +1,6 @@
 package com.example.thegamechanger.ui.theme
 
+import android.webkit.WebSettings
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -43,6 +44,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.Yellow
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -60,6 +63,7 @@ fun ManagerDashboard(
     viewModel: ManagerViewModel = hiltViewModel(),
     onLogout: () -> Unit
 ) {
+    val isLoading = viewModel.isLoading
     val dealers = viewModel.dealerList
     val tables = viewModel.tableMasters
     var currentTime by remember { mutableStateOf(System.currentTimeMillis()) }
@@ -205,6 +209,7 @@ fun ManagerDashboard(
                 Button(
                     onClick = {
                         viewModel.loadDashboard(2)
+
                     },
                     modifier = Modifier
                         .width(150.dp)
@@ -227,6 +232,18 @@ fun ManagerDashboard(
             }
         }
     }
+    if (isLoading) {
+
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            androidx.compose.material3.CircularProgressIndicator(
+                color = PokerGoldNeon
+            )
+        }
+
+    }
 }
 
 @Composable
@@ -234,18 +251,15 @@ fun DealerRowPremium(
     dealer: DealerTable,
     tables: List<TableMaster>,
     currentTime: Long,
-   // onAssign: (TableMaster) -> Unit,
     onAssign: (Int, TableMaster) -> Unit,
-   // onStop: () -> Unit
     onStop: (Int, Int, Int, Int) -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var showStopDialog by remember { mutableStateOf(false) }
-    var coinText by remember { mutableStateOf("") }
+    //var coinText by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
     var showDialog by remember { mutableStateOf(false) }
     var selectedTable by remember { mutableStateOf<TableMaster?>(null) }
-
     val entryTimeMillis = remember(dealer.EntryOnDate) {
         try {
             SimpleDateFormat(
@@ -256,7 +270,6 @@ fun DealerRowPremium(
             0L
         }
     }
-    // Calculate difference every second
     val timerText = if (dealer.EntryStatus == 1 && entryTimeMillis > 0L) {
         val diff = (currentTime - entryTimeMillis).coerceAtLeast(0L)
         val hours = diff / 3600000
@@ -272,7 +285,6 @@ fun DealerRowPremium(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Dealer Info
         Column(modifier = Modifier.weight(1.5f)) {
             Text(dealer.DealerName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -284,11 +296,20 @@ fun DealerRowPremium(
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = if (dealer.EntryStatus == 1) dealer.TableName else "Standby",
+
                     color = if (dealer.EntryStatus == 1) PokerMint else Color.White.copy(0.4f),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
                 )
             }
+            Spacer(modifier = Modifier.height(2.dp))
+
+            Text(
+                text = "Commission : ${dealer.commission}",
+                color = PokerGoldNeon,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold
+            )
         }
         Text(
             text = timerText,
@@ -384,17 +405,19 @@ fun DealerRowPremium(
                             showDialog = false
                             selectedTable = null
                         }
-                       /* selectedTable?.let {
-                            onAssign(it)
-                            showDialog = false
-                            selectedTable = null
-                        }
 
-                        */
+
                     },
                     enabled = selectedTable != null,
-                    colors = ButtonDefaults.buttonColors(
+                    /*colors = ButtonDefaults.buttonColors(
                         containerColor = PokerMint
+                    )
+                    */
+                    colors= ButtonDefaults.buttonColors(
+                        containerColor =PokerMint,
+                        disabledContainerColor = Yellow,
+                        contentColor = Color.Black,
+                        disabledContentColor = Color.Black
                     )
                 ) {
                     Text("ADD", color = Color.Black)
@@ -415,10 +438,8 @@ fun DealerRowPremium(
         )
     }
 
-    if (showStopDialog) {
-
+   /* if (showStopDialog) {
         androidx.compose.material3.AlertDialog(
-
             onDismissRequest = { showStopDialog = false },
 
             containerColor = Color(0xFFD90404),
@@ -436,56 +457,27 @@ fun DealerRowPremium(
 
                     Text(
                         "Enter Coin Amount",
-                        color = Color.White
+                        color = Color.White,
+                        fontSize = 18.sp
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     androidx.compose.material3.OutlinedTextField(
                         value = coinText,
                         onValueChange = { coinText = it },
-                        singleLine = true
+                        singleLine = true,
 
-                    )
-
-                }
-
-            },
-
-          /*  confirmButton = {
-
-                Button(
-
-                    onClick = {
-
-                        val coinValue =
-                            coinText.toIntOrNull() ?: 0
-
-                        onStop(
-
-                            dealer.DId,
-                            dealer.TbId,
-                            dealer.dtbId,
-                            coinValue
-
+                        textStyle= TextStyle(
+                            fontSize = 18.sp
                         )
 
-                        showStopDialog = false
-                        coinText = ""
 
-                    },
-
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Gray
                     )
-
-                ) {
-
-                    Text("REMOVE")
 
                 }
 
             },
 
-           */
+
             confirmButton = {
 
                 Button(
@@ -543,12 +535,101 @@ fun DealerRowPremium(
                         }
                         .padding(8.dp),
 
-                    color = Color.Gray
+                    color = Color.Black,
+                    fontSize = 18.sp,
 
                 )
 
             }
 
+        )
+    }
+
+    */
+
+    if (showStopDialog) {
+
+        androidx.compose.material3.AlertDialog(
+
+            onDismissRequest = { showStopDialog = false },
+
+            containerColor = Color(0xFFD90404),
+
+            title = {
+                Text(
+                    "Remove Dealer",
+                    color = Color.White
+                )
+            },
+
+            text = {
+
+                Column {
+
+                    Text(
+                        "Commission Amount",
+                        color = Color.White,
+                        fontSize = 18.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = "₹ ${dealer.commission}",
+                        color = PokerGoldNeon,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                }
+            },
+
+            confirmButton = {
+
+                Button(
+
+                    onClick = {
+
+                        onStop(
+
+                            dealer.DId,
+                            dealer.TbId,
+                            dealer.dtbId,
+                            dealer.commission   // direct value
+
+                        )
+
+                        showStopDialog = false
+                    },
+
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Yellow
+                    )
+
+                ) {
+
+                    Text("REMOVE")
+
+                }
+
+            },
+
+            dismissButton = {
+
+                Text(
+
+                    "Cancel",
+
+                    modifier = Modifier
+                        .clickable {
+                            showStopDialog = false
+                        }
+                        .padding(8.dp),
+
+                    color = Color.Black,
+                    fontSize = 18.sp
+                )
+            }
         )
     }
 

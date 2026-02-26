@@ -90,7 +90,7 @@ fun MainScreen(
     var gameStarted by remember { mutableStateOf(false) }
     var isSettling by remember { mutableStateOf(false) }
     var gameCompleted by remember { mutableStateOf(false) }
-
+    val dealerNameVM by viewModel.dealerName
     LaunchedEffect(addState) {
         if (addState is UiState.Success) {
             Toast.makeText(
@@ -114,13 +114,9 @@ fun MainScreen(
                 val isStart =
                     (gameState as UiState.Success).data.Data.IsStart
 
-                if (isStart == 1) {
-                    gameStarted = true
-                    gameCompleted = false
-                } else {
-                    gameStarted = false
-                    gameCompleted = false // ✅ Prevent dialog reopen
-                }
+
+                gameStarted = isStart == 1
+                gameCompleted = false
             }
 
             is UiState.Error ->{
@@ -135,16 +131,19 @@ fun MainScreen(
             else->{}
         }
     }
-
-    val players = viewModel.playersOnTable
+    //val players = viewModel.playersOnTable
+    //val players = viewModel.playersOnTable.toList()
+    val players by viewModel.playersOnTable.collectAsState()
     var winAmount by remember { mutableStateOf("") }
     var showExitDialog by remember { mutableStateOf(false) }
     var selectedPlayer by remember { mutableStateOf<PlayerOnTableItem?>(null) }
 
     val tableName by viewModel.tableName
 
-    LaunchedEffect(dealerId) {
+    LaunchedEffect(Unit) {
+
         viewModel.setDealer(dealerId,dealerName)
+
         viewModel.fetchPlayerOnTable(dealerId)
 
     }
@@ -232,7 +231,7 @@ fun MainScreen(
                         Spacer(modifier = Modifier.height(12.dp))
 
                         Text(
-                            text = dealerName,
+                            text = dealerNameVM,
                             fontSize = 24.sp,     // smaller = more elegant
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -293,9 +292,14 @@ fun MainScreen(
             ActionButtons(
                 gameStarted = gameStarted,
                 isSettling = isSettling,
-                onStart = { /*gameStarted = true
-                          isSettling=false*/
-                    viewModel.startGame()
+                playerCount = players.size,
+                onStart = {
+                   // viewModel.startGame()
+                    if(players.size < 2){
+                        Toast.makeText(context,"Minimum 2 players required",Toast.LENGTH_SHORT).show()
+                    }else{
+                        viewModel.startGame()
+                    }
                           },
                 onComplete = { gameCompleted = true }
             )
@@ -436,11 +440,12 @@ fun PremiumTableRow(player: PlayerOnTableItem, isLast: Boolean, onExit: () -> Un
 @Composable
 fun ActionButtons(gameStarted: Boolean,
                   isSettling:Boolean,
+                  playerCount:Int,
                   onStart: () -> Unit, onComplete: () -> Unit) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         Button(
             onClick = onStart,
-            enabled = !gameStarted && !isSettling ,
+            enabled = !gameStarted && !isSettling && playerCount >= 2,
             modifier = Modifier.weight(1f).height(65.dp),
             shape = RoundedCornerShape(22.dp),
             colors = ButtonDefaults.buttonColors(
@@ -463,7 +468,6 @@ fun ActionButtons(gameStarted: Boolean,
                 disabledContainerColor = Color(0xFFFFFF00), // Dark Mint when disabled
                 disabledContentColor = Color.DarkGray
             ),
-
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 12.dp)
         ) {
             Text("FINISH", fontWeight = FontWeight.Black, color = Color.Black, fontSize = 16.sp)
