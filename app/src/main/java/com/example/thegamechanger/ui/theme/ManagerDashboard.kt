@@ -305,7 +305,7 @@ fun DealerRowPremium(
             Spacer(modifier = Modifier.height(2.dp))
 
             Text(
-                text = "Commission : ${dealer.commission}",
+                text = "Commission : ${dealer.Commission.toInt()}",
                 color = PokerGoldNeon,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold
@@ -438,114 +438,6 @@ fun DealerRowPremium(
         )
     }
 
-   /* if (showStopDialog) {
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { showStopDialog = false },
-
-            containerColor = Color(0xFFD90404),
-
-            title = {
-                Text(
-                    "Remove Dealer",
-                    color = Color.White
-                )
-            },
-
-            text = {
-
-                Column {
-
-                    Text(
-                        "Enter Coin Amount",
-                        color = Color.White,
-                        fontSize = 18.sp
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    androidx.compose.material3.OutlinedTextField(
-                        value = coinText,
-                        onValueChange = { coinText = it },
-                        singleLine = true,
-
-                        textStyle= TextStyle(
-                            fontSize = 18.sp
-                        )
-
-
-                    )
-
-                }
-
-            },
-
-
-            confirmButton = {
-
-                Button(
-
-                    onClick = {
-
-                        if (coinText.isBlank()) {
-
-                            android.widget.Toast
-                                .makeText(
-                                    context,
-                                    "Please enter coin amount",
-                                    android.widget.Toast.LENGTH_SHORT
-                                ).show()
-
-                            return@Button
-                        }
-
-                        val coinValue = coinText.toInt()
-
-                        onStop(
-
-                            dealer.DId,
-                            dealer.TbId,
-                            dealer.dtbId,
-                            coinValue
-
-                        )
-
-                        showStopDialog = false
-                        coinText = ""
-
-                    },
-
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Yellow
-                    )
-
-                ) {
-
-                    Text("REMOVE")
-
-                }
-
-            },
-            dismissButton = {
-                Text(
-
-                    "Cancel",
-
-                    modifier = Modifier
-                        .clickable {
-                            showStopDialog = false
-                            coinText = ""
-                        }
-                        .padding(8.dp),
-
-                    color = Color.Black,
-                    fontSize = 18.sp,
-
-                )
-
-            }
-
-        )
-    }
-
-    */
 
     if (showStopDialog) {
 
@@ -575,7 +467,7 @@ fun DealerRowPremium(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     Text(
-                        text = "₹ ${dealer.commission}",
+                        text = "₹ ${dealer.Commission.toInt()}",
                         color = PokerGoldNeon,
                         fontSize = 26.sp,
                         fontWeight = FontWeight.Bold
@@ -589,13 +481,11 @@ fun DealerRowPremium(
                 Button(
 
                     onClick = {
-
                         onStop(
-
                             dealer.DId,
                             dealer.TbId,
                             dealer.dtbId,
-                            dealer.commission   // direct value
+                            dealer.Commission.toInt()   // direct value
 
                         )
 

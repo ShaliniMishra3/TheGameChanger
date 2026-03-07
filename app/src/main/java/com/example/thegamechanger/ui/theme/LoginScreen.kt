@@ -58,7 +58,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.LocalContext
 import com.example.thegamechanger.UiState
+import com.example.thegamechanger.remote.SessionManager
 
 
 @Composable
@@ -73,10 +75,26 @@ fun LoginScreen(
     val loginState by viewModel.loginState.collectAsState()
     val navigateToMain by viewModel.navigateToMain.collectAsState()
     val navigateToManager by viewModel.navigateToManager.collectAsState()
+    val context = LocalContext.current
+    val session = SessionManager(context)
 
     LaunchedEffect(navigateToMain, navigateToManager) {
-
         navigateToMain?.let { (dealerId, dealerName) ->
+
+            session.saveLogin(dealerId, dealerName, "Dealer")
+
+            onLoginSuccess(dealerId, dealerName, true)
+            viewModel.resetNavigation()
+        }
+        if (navigateToManager == true) {
+
+            session.saveLogin(0, "", "Manager")
+
+            onLoginSuccess(0, "", false)
+            viewModel.resetNavigation()
+        }
+
+       /* navigateToMain?.let { (dealerId, dealerName) ->
             onLoginSuccess(dealerId,dealerName,true) // Dealer
             viewModel.resetNavigation()
         }
@@ -86,10 +104,9 @@ fun LoginScreen(
             viewModel.resetNavigation()
         }
 
+        */
 
     }
-
-
     val focusManager = LocalFocusManager.current
     Box(
         modifier = Modifier
@@ -208,9 +225,7 @@ fun LoginScreen(
                             unfocusedTextColor = Color.White
                         )
                     )
-
                     Spacer(modifier = Modifier.height(16.dp))
-
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -226,7 +241,6 @@ fun LoginScreen(
                             color = Color.White,
                             modifier = Modifier.padding(end = 16.dp)
                         )
-
                         RadioButton(
                             selected = selectedRole == "Manager",
                             onClick = { selectedRole = "Manager" },
@@ -239,7 +253,6 @@ fun LoginScreen(
                             color = Color.White
                         )
                     }
-
                     Spacer(modifier = Modifier.height(32.dp))
                     Button(
                         onClick = {  viewModel.login(email, password, selectedRole) },
@@ -262,20 +275,17 @@ fun LoginScreen(
                     }
                 }
             }
-
             when (val state = loginState) {
-
                 is UiState.Loading -> {
                     Text(
                         text = "Logging in...",
                         color = Color.Yellow
                     )
                 }
-
                 is UiState.Error -> {
                     Text(
                         text = state.message ?: "Login failed",
-                        color = Color.Red
+                        color = Color.White
                     )
                 }
 

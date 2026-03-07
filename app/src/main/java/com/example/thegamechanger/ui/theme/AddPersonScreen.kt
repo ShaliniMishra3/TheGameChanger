@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import com.example.thegamechanger.UiState
 import com.example.thegamechanger.model.PlayerDto
 import com.example.thegamechanger.viewmodel.GameViewModel
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddPersonScreen(
     viewModel: GameViewModel,
@@ -56,6 +57,10 @@ fun AddPersonScreen(
     val dealerId by viewModel.dealerId
     val context = LocalContext.current
     val tableId by viewModel.tableId
+    var showDialog by remember { mutableStateOf(false) }
+    var selectedPlayerName by remember { mutableStateOf<String?>(null) }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    var showWarningDialog by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         viewModel.fetchPlayerOnTable(dealerId)
         viewModel.loadPlayers()
@@ -82,9 +87,6 @@ fun AddPersonScreen(
         }
     }
 
-    var showDialog by remember { mutableStateOf(false) }
-    var selectedPlayerName by remember { mutableStateOf<String?>(null) }
-    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -110,7 +112,6 @@ fun AddPersonScreen(
                 .statusBarsPadding()
         ) {
             Spacer(modifier = Modifier.height(40.dp))
-
             // --- HEADER ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -168,12 +169,23 @@ fun AddPersonScreen(
                                 dealerName = player.Name,
                                 mobile = player.Mobile,
                                 onAddClick = {
-                                    haptic.performHapticFeedback(
-                                        androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove
-                                    )
-                                    selectedPlayerName = player.Name
-                                    selectedPlayerId = player.PId
-                                    showDialog = true
+                                    if (tableId > 0) {
+                                        haptic.performHapticFeedback(
+                                            androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove
+                                        )
+                                        selectedPlayerName = player.Name
+                                        selectedPlayerId = player.PId
+                                        showDialog = true
+                                    }else{
+                                       /* Toast.makeText(
+                                            context,
+                                            "Please assign a table to dealer first",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+
+                                        */
+                                        showWarningDialog=true
+                                    }
                                 }
                             )
                         }
@@ -213,6 +225,55 @@ fun AddPersonScreen(
                 showDialog = false
             }
         )
+    }
+    if(showWarningDialog){
+
+        BasicAlertDialog(
+            onDismissRequest = { showWarningDialog = false }
+        ) {
+
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFF2B1B1B)
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+
+                    Text(
+                        text = "⚠ WARNING",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFFFC107)
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Please assign a table to the dealer before adding players.",
+                        color = Color.White,
+                        fontSize = 16.sp
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(
+                        onClick = { showWarningDialog = false },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFFC107),
+                            contentColor = Color.Black
+                        )
+                    ) {
+                        Text("OK", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
     }
 
 }

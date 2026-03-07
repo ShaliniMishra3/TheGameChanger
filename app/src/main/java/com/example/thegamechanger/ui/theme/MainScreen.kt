@@ -1,9 +1,6 @@
 package com.example.thegamechanger.ui.theme
 
-
-
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,12 +13,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
@@ -48,25 +47,19 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.thegamechanger.UiState
 import com.example.thegamechanger.model.PlayerOnTableItem
+import com.example.thegamechanger.remote.SessionManager
 import com.example.thegamechanger.viewmodel.GameViewModel
-import com.example.thegamechanger.viewmodel.Player
-
-
-
-
 
 val PokerBloodRedBright = Color(0xFFFF0000) // Vibrant Red for glow
 val PokerGlass = Color(0xFF151515).copy(alpha = 0.9f)
 val PokerGoldNeon = Color(0xFFFFD700)
 val PokerGoldDark = Color(0xFFB8860B)
-
-// --- INTENSE BLOOD RED PALETTE ---
-
 val PokerCrimsonTop = Color(0xFFE30B0B)    // Rich Blood Red
 val PokerCrimsonBottom = Color(0xFFC40505) // Deep Bruised Red (Replaces Black)
   // The "Loud" Accent
@@ -84,6 +77,7 @@ fun MainScreen(
     onAddPersonClick: () -> Unit,
     onBack: () -> Unit
 ) {
+    val players by viewModel.playersOnTable.collectAsState()
     val addState by viewModel.addPlayerState.collectAsState()
     val context = LocalContext.current
     val gameState by viewModel.gameState.collectAsState()
@@ -101,54 +95,34 @@ fun MainScreen(
             viewModel.clearAddPlayerState()
         }
     }
-    LaunchedEffect(gameState){
-
+    LaunchedEffect(gameState,players.size){
         when(gameState){
-
             is UiState.Success ->{
-
                 val msg = (gameState as UiState.Success).data.Data.Msg
-
                 Toast.makeText(context,msg,Toast.LENGTH_LONG).show()
-
                 val isStart =
                     (gameState as UiState.Success).data.Data.IsStart
-
-
-                gameStarted = isStart == 1
+                 gameStarted = isStart == 1 && players.size >= 2
                 gameCompleted = false
             }
-
             is UiState.Error ->{
-
                 Toast.makeText(
                     context,
                     (gameState as UiState.Error).message,
                     Toast.LENGTH_LONG
                 ).show()
             }
-
             else->{}
         }
     }
-    //val players = viewModel.playersOnTable
-    //val players = viewModel.playersOnTable.toList()
-    val players by viewModel.playersOnTable.collectAsState()
     var winAmount by remember { mutableStateOf("") }
     var showExitDialog by remember { mutableStateOf(false) }
     var selectedPlayer by remember { mutableStateOf<PlayerOnTableItem?>(null) }
-
     val tableName by viewModel.tableName
-
     LaunchedEffect(Unit) {
-
         viewModel.setDealer(dealerId,dealerName)
-
         viewModel.fetchPlayerOnTable(dealerId)
 
-    }
-    BackHandler {
-        onBack()
     }
     Box(
         modifier = Modifier
@@ -208,17 +182,13 @@ fun MainScreen(
                 ) {
 
                     Column {
-
                         Row(verticalAlignment = Alignment.CenterVertically) {
-
                             Box(
                                 modifier = Modifier
                                     .size(7.dp)
                                     .background(PokerGoldNeon, CircleShape)
                             )
-
                             Spacer(modifier = Modifier.width(10.dp))
-
                             Text(
                                 text = "LIVE TABLE",
                                 fontSize = 11.sp,
@@ -227,18 +197,14 @@ fun MainScreen(
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
-
                         Spacer(modifier = Modifier.height(12.dp))
-
                         Text(
                             text = dealerNameVM,
                             fontSize = 24.sp,     // smaller = more elegant
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
-
                         Spacer(modifier = Modifier.height(4.dp))
-
                         Text(
                             text = tableName,
                             fontSize = 14.sp,
@@ -247,7 +213,6 @@ fun MainScreen(
                             fontWeight = FontWeight.Medium
                         )
                     }
-
                     // Premium Gold Circle Button
                     Box(
                         modifier = Modifier
@@ -269,10 +234,11 @@ fun MainScreen(
                             color = Color.Black
                         )
                     }
+
                 }
+
             }
             Spacer(modifier = Modifier.height(30.dp))
-
             // ---- THE GLASS TABLE ----
             if (players.isNotEmpty()) {
                 PremiumTable(
@@ -285,22 +251,19 @@ fun MainScreen(
             } else {
                 EmptyTablePlaceholder()
             }
-
             Spacer(modifier = Modifier.height(35.dp))
-
             // ---- ACTION AREA ----
             ActionButtons(
                 gameStarted = gameStarted,
                 isSettling = isSettling,
                 playerCount = players.size,
                 onStart = {
-                   // viewModel.startGame()
+                  // viewModel.startGame()
                     if(players.size < 2){
                         Toast.makeText(context,"Minimum 2 players required",Toast.LENGTH_SHORT).show()
                     }else{
                         viewModel.startGame()
-                    }
-                          },
+                    } },
                 onComplete = { gameCompleted = true }
             )
 
@@ -320,6 +283,48 @@ fun MainScreen(
             }
             Spacer(modifier = Modifier.height(50.dp))
         }
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .navigationBarsPadding()
+                .padding(20.dp)
+
+        ) {
+            Card(
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = PokerDialogGlass
+                ),
+                border = BorderStroke(
+                    1.dp,
+                    Color.White.copy(alpha = 0.2f)
+                ),
+                modifier = Modifier
+                    .clickable {
+                        val session = SessionManager(context)
+                        session.logout()
+                        onBack()
+                    }
+            ) {
+
+                Row(
+                    modifier = Modifier
+                        .padding(horizontal = 40.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
+                    Text(
+                        text = "LOGOUT",
+                        color = PokerGoldNeon,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        letterSpacing = 2.sp
+                    )
+                }
+            }
+        }
+
+
     }
 
     if (showExitDialog && selectedPlayer != null) {
@@ -341,6 +346,7 @@ fun MainScreen(
         )
 
     }
+
 }
 
 @Composable
@@ -445,18 +451,20 @@ fun ActionButtons(gameStarted: Boolean,
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         Button(
             onClick = onStart,
-            enabled = !gameStarted && !isSettling && playerCount >= 2,
+            enabled = playerCount >= 2 && !gameStarted && !isSettling,
+           // enabled = !gameStarted && !isSettling && playerCount >= 2,
             modifier = Modifier.weight(1f).height(65.dp),
             shape = RoundedCornerShape(22.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (gameStarted) Color(0xFF1A1A1A) else Color.White,
-                contentColor = Color.Black
+                containerColor = Color.White,
+                contentColor = Color.Black,
+                disabledContainerColor = Color(0xF5896CCE),
+                disabledContentColor = Color.White
             ),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 12.dp)
         ) {
             Text(if (gameStarted) "IN PLAY" else "DEAL", fontWeight = FontWeight.Black, fontSize = 16.sp)
         }
-
         Button(
             onClick = onComplete,
             enabled = gameStarted && !isSettling,
@@ -465,7 +473,7 @@ fun ActionButtons(gameStarted: Boolean,
             colors = ButtonDefaults.buttonColors(
                 containerColor = PokerMint,
                 contentColor = Color.Black,
-                disabledContainerColor = Color(0xFFFFFF00), // Dark Mint when disabled
+                disabledContainerColor = Color(0xFFFFFF00),
                 disabledContentColor = Color.DarkGray
             ),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 12.dp)
@@ -479,7 +487,6 @@ fun ActionButtons(gameStarted: Boolean,
 @Composable
 fun EarningsInput(winAmount: String, onAmountChange: (String) -> Unit, onSubmit: () -> Unit) {
     Spacer(modifier = Modifier.height(24.dp))
-
     // Glass Card Container to make the input visible against the red
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -496,12 +503,19 @@ fun EarningsInput(winAmount: String, onAmountChange: (String) -> Unit, onSubmit:
                 letterSpacing = 2.sp,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
-
             OutlinedTextField(
                 value = winAmount,
-                onValueChange = onAmountChange,
+                onValueChange =  {
+                    // Allow only numbers
+                    if (it.all { char -> char.isDigit() }) {
+                        onAmountChange(it)
+                    }
+                } , //onAmountChange
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Enter Total Winning Pot", color = Color.White.copy(alpha = 0.3f)) },
+               keyboardOptions = KeyboardOptions(
+                   keyboardType = KeyboardType.Number
+               ),
                 textStyle = androidx.compose.ui.text.TextStyle(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
@@ -516,9 +530,7 @@ fun EarningsInput(winAmount: String, onAmountChange: (String) -> Unit, onSubmit:
                     cursorColor = PokerGoldNeon
                 )
             )
-
             Spacer(modifier = Modifier.height(16.dp))
-
             Button(
                 onClick = onSubmit,
                 modifier = Modifier
