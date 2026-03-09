@@ -26,7 +26,8 @@ import kotlin.collections.emptyList
 class GameViewModel @Inject constructor(
     private val repository: DealerRepository
 ) : ViewModel() {
-
+    private val _gameStarted = mutableStateOf(false)
+    val gameStarted: State<Boolean> = _gameStarted
     private val _addPlayerState =
         MutableStateFlow<UiState<AddPlayerResult>>(UiState.Idle)
     val addPlayerState: StateFlow<UiState<AddPlayerResult>> = _addPlayerState
@@ -35,6 +36,8 @@ class GameViewModel @Inject constructor(
     private val _dealerId = mutableStateOf(0)
     val dealerId: State<Int> = _dealerId
     private val _tableName = mutableStateOf("")
+    private val _netCommission=mutableStateOf("")
+    val netCommission:State<String> = _netCommission
     val tableName: State<String> = _tableName
     private val _playersOnTable =
        MutableStateFlow<List<PlayerOnTableItem>>(emptyList())
@@ -45,8 +48,16 @@ class GameViewModel @Inject constructor(
     val availablePlayers = _availablePlayers.asStateFlow()
     private val _gameState = MutableStateFlow<UiState<GameStartResponse>?>(null)
     val gameState = _gameState
-    var currentTwid = 0
-   private val _tablePlayers =
+    private val _currentTwid = mutableStateOf(0)
+    val currentTwid: Int
+        get() = _currentTwid.value
+    fun setGameStarted(started: Boolean) {
+        _gameStarted.value = started
+    }
+    fun clearGameState() {
+        _gameState.value = UiState.Idle
+    }
+    private val _tablePlayers =
        MutableStateFlow<List<AddPlayerResult>>(emptyList())
     private fun addPlayerToTableList(player: AddPlayerResult) {
         _tablePlayers.value = _tablePlayers.value + player
@@ -61,7 +72,6 @@ class GameViewModel @Inject constructor(
         _addPlayerState.value = UiState.Idle
     }
     var tableId = mutableStateOf(0)
-
     fun fetchPlayerOnTable(dealerId: Int) {
         viewModelScope.launch {
             val result = repository.getPlayerOnTable(dealerId)
@@ -74,11 +84,12 @@ class GameViewModel @Inject constructor(
                     _tableName.value = dashboard.TableName
                     _dealerId.value = dashboard.DId
                     tableId.value = dashboard.tbId
-
+                    _netCommission.value=dashboard.NetCommission
+                    // 🔥 IMPORTANT
+                    _currentTwid.value = dashboard.Twid
+                    _gameStarted.value = dashboard.Twid != 0
                 }
-
             }
-
         }
     }
     fun addPlayerToTable(
@@ -146,7 +157,7 @@ class GameViewModel @Inject constructor(
             )
             when(result){
                 is UiState.Success ->{
-                    currentTwid = result.data.Data.Twid
+                    _currentTwid.value = result.data.Data.Twid
                     _gameState.value = result
                 }
                 is UiState.Error ->{
@@ -156,19 +167,42 @@ class GameViewModel @Inject constructor(
             }
         }
     }
-    fun stopGame(winningAmount:String){
-        viewModelScope.launch {
-            _gameState.value = UiState.Loading
-             val result = repository.gameStart(
-                GameStartRequest(
-                    DId = dealerId.value,
-                    tbId = tableId.value,
-                    IsStart = 0,
-                    WinningCoin = winningAmount,
-                    Twid = currentTwid
-                )
-            )
-            _gameState.value = result
-        }
-    }
+
+
+   fun stopGame(twid: Int, winningAmount: String) {
+       viewModelScope.launch {
+
+           _gameState.value = UiState.Loading
+
+           val result = repository.gameStart(
+               GameStartRequest(
+                   DId = dealerId.value,
+                   tbId = tableId.value,
+                   IsStart = 0,
+                   WinningCoin = winningAmount,
+                   Twid = twid
+               )
+           )
+
+           when (result) {
+
+               is UiState.Success -> {
+                   val data = result.data.Data
+                   _currentTwid.value = 0
+                   _gameStarted.value = false
+                   _netCommission.value = data.NetCommission.toString()
+                   // 🔥 refresh dashboard
+                   fetchPlayerOnTable(dealerId.value)
+                   _gameState.value = result
+               }
+
+               is UiState.Error -> {
+                   _gameState.value = result
+               }
+
+               else -> {}
+           }
+       }
+   }
+
 }

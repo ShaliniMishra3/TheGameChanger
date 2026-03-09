@@ -31,6 +31,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -39,6 +43,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,13 +60,14 @@ import com.example.thegamechanger.UiState
 import com.example.thegamechanger.model.PlayerOnTableItem
 import com.example.thegamechanger.remote.SessionManager
 import com.example.thegamechanger.viewmodel.GameViewModel
+import kotlinx.coroutines.launch
 
 val PokerBloodRedBright = Color(0xFFFF0000) // Vibrant Red for glow
 val PokerGlass = Color(0xFF151515).copy(alpha = 0.9f)
 val PokerGoldNeon = Color(0xFFFFD700)
 val PokerGoldDark = Color(0xFFB8860B)
-val PokerCrimsonTop = Color(0xFFE30B0B)    // Rich Blood Red
-val PokerCrimsonBottom = Color(0xFFC40505) // Deep Bruised Red (Replaces Black)
+val PokerCrimsonTop = Color(0xFFE30B0B)
+val PokerCrimsonBottom = Color(0xFFC40505)
   // The "Loud" Accent
 val PokerGold = Color(0xFFFFD700)
 val PokerMint = Color(0xFF00FFC8)
@@ -77,14 +83,19 @@ fun MainScreen(
     onAddPersonClick: () -> Unit,
     onBack: () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
     val players by viewModel.playersOnTable.collectAsState()
     val addState by viewModel.addPlayerState.collectAsState()
     val context = LocalContext.current
     val gameState by viewModel.gameState.collectAsState()
-    var gameStarted by remember { mutableStateOf(false) }
+    // var gameStarted by remember { mutableStateOf(false) }
+    val gameStarted by viewModel.gameStarted
     var isSettling by remember { mutableStateOf(false) }
     var gameCompleted by remember { mutableStateOf(false) }
     val dealerNameVM by viewModel.dealerName
+    var snackbarHostState = remember { SnackbarHostState() }
+    val session = SessionManager(context)
+    val twid = session.getTwid()
     LaunchedEffect(addState) {
         if (addState is UiState.Success) {
             Toast.makeText(
@@ -95,35 +106,47 @@ fun MainScreen(
             viewModel.clearAddPlayerState()
         }
     }
-    LaunchedEffect(gameState,players.size){
-        when(gameState){
-            is UiState.Success ->{
+    LaunchedEffect(gameState, players.size) {
+        when (gameState) {
+            is UiState.Success -> {
                 val msg = (gameState as UiState.Success).data.Data.Msg
-                Toast.makeText(context,msg,Toast.LENGTH_LONG).show()
+                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
                 val isStart =
                     (gameState as UiState.Success).data.Data.IsStart
-                 gameStarted = isStart == 1 && players.size >= 2
+                val data = (gameState as UiState.Success).data.Data
+                val session = SessionManager(context)
+
+                if (data.IsStart == 1) {
+                    session.saveTwid(data.Twid)
+                    viewModel.setGameStarted(true)
+                }
                 gameCompleted = false
+                viewModel.clearGameState()
             }
-            is UiState.Error ->{
+            is UiState.Error -> {
                 Toast.makeText(
                     context,
                     (gameState as UiState.Error).message,
                     Toast.LENGTH_LONG
                 ).show()
+                viewModel.clearGameState()
             }
-            else->{}
+             else -> {}
         }
     }
     var winAmount by remember { mutableStateOf("") }
     var showExitDialog by remember { mutableStateOf(false) }
     var selectedPlayer by remember { mutableStateOf<PlayerOnTableItem?>(null) }
     val tableName by viewModel.tableName
+    val netCommission by viewModel.netCommission
     LaunchedEffect(Unit) {
-        viewModel.setDealer(dealerId,dealerName)
+        viewModel.setDealer(dealerId, dealerName)
         viewModel.fetchPlayerOnTable(dealerId)
 
     }
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding->
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -141,7 +164,6 @@ fun MainScreen(
                 .background(
                     Brush.radialGradient(
                         colors = listOf(Color.White.copy(alpha = 0.05f), Color.Transparent),
-                        //colors = listOf(PokerVibrantRed.copy(alpha = 0.2f), Color.Transparent),
                         radius = 800f
                     )
                 )
@@ -153,14 +175,13 @@ fun MainScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             Spacer(modifier = Modifier.height(50.dp))
-      // ---- PREMIUM HEADER CARD ----
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .shadow(25.dp, RoundedCornerShape(32.dp)),
                 shape = RoundedCornerShape(32.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF2A0000) // Deep rich maroon (less transparent)
+                    containerColor = Color(0xFF2A0000)
                 ),
                 border = BorderStroke(
                     1.dp,
@@ -200,20 +221,36 @@ fun MainScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = dealerNameVM,
-                            fontSize = 24.sp,     // smaller = more elegant
+                            fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = tableName,
-                            fontSize = 14.sp,
-                            color = PokerGoldNeon,
-                            letterSpacing = 1.sp,
-                            fontWeight = FontWeight.Medium
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+
+                            Text(
+                                text = tableName,
+                                fontSize = 14.sp,
+                                color = PokerGoldNeon,
+                                letterSpacing = 1.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Text(
+                                text = "Commission:$netCommission",
+                                fontSize = 14.sp,
+                                color = PokerMint,
+                                letterSpacing = 1.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
                     }
-                    // Premium Gold Circle Button
+
                     Box(
                         modifier = Modifier
                             .size(48.dp)
@@ -244,8 +281,21 @@ fun MainScreen(
                 PremiumTable(
                     players = players,
                     onExitClick = { player ->
-                        selectedPlayer = player
-                        showExitDialog = true
+                        if (gameStarted) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    message = "Game is running. Player cannot exit.",
+                                    duration = SnackbarDuration.Short
+                                )
+                            }
+
+
+
+
+                        } else {
+                            selectedPlayer = player
+                            showExitDialog = true
+                        }
                     }
                 )
             } else {
@@ -258,12 +308,13 @@ fun MainScreen(
                 isSettling = isSettling,
                 playerCount = players.size,
                 onStart = {
-                  // viewModel.startGame()
-                    if(players.size < 2){
-                        Toast.makeText(context,"Minimum 2 players required",Toast.LENGTH_SHORT).show()
-                    }else{
+                    if (players.size < 2) {
+                        Toast.makeText(context, "Minimum 2 players required", Toast.LENGTH_SHORT)
+                            .show()
+                    } else {
                         viewModel.startGame()
-                    } },
+                    }
+                },
                 onComplete = { gameCompleted = true }
             )
 
@@ -272,65 +323,62 @@ fun MainScreen(
                     winAmount = winAmount,
                     onAmountChange = { winAmount = it },
                     onSubmit = {
-                        viewModel.stopGame(winAmount)
-                        //val amount = winAmount.toIntOrNull() ?: 0
-                       // viewModel.updateDealerCommission(amount)
+                       // viewModel.stopGame(winAmount)
+                        viewModel.stopGame(viewModel.currentTwid, winAmount)
+                        viewModel.setGameStarted(false)
                         winAmount = ""
                         gameCompleted = false
-                        gameStarted = false
+
+                        viewModel.setGameStarted(false)
+                    },
+                    onClose = {
+                        gameCompleted=false
                     }
                 )
             }
-            Spacer(modifier = Modifier.height(50.dp))
+            Spacer(modifier = Modifier.height(100.dp))
         }
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .navigationBarsPadding()
-                .padding(20.dp)
 
-        ) {
+// 🔥 FIXED LOGOUT BUTTON
+
+
+        if (!gameCompleted) {
             Card(
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = PokerDialogGlass
-                ),
-                border = BorderStroke(
-                    1.dp,
-                    Color.White.copy(alpha = 0.2f)
-                ),
                 modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .navigationBarsPadding()
+                    .padding(20.dp)
                     .clickable {
                         val session = SessionManager(context)
                         session.logout()
                         onBack()
                     }
             ) {
-
                 Row(
-                    modifier = Modifier
-                        .padding(horizontal = 40.dp, vertical = 14.dp),
+                    modifier = Modifier.padding(horizontal = 40.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-
                     Text(
                         text = "LOGOUT",
                         color = PokerGoldNeon,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        letterSpacing = 2.sp
+                        fontSize = 14.sp
                     )
                 }
             }
         }
 
-
     }
+
+
+}
 
     if (showExitDialog && selectedPlayer != null) {
         ExitDialog(
             player = selectedPlayer!!,
             onDismiss = { showExitDialog = false },
+
             onSubmit = { finalAmount ->
 
                 viewModel.addPlayerToTable(
@@ -340,7 +388,6 @@ fun MainScreen(
                     coin = finalAmount.toDouble(),
                     isAdd = 0   // 🔥 EXIT CASE
                 )
-
                 showExitDialog = false
             }
         )
@@ -350,7 +397,8 @@ fun MainScreen(
 }
 
 @Composable
-fun PremiumTable(players: List<PlayerOnTableItem>, onExitClick: (PlayerOnTableItem) -> Unit) {
+fun PremiumTable(players: List<PlayerOnTableItem>,
+                 onExitClick:  (PlayerOnTableItem) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -405,7 +453,6 @@ fun PremiumTableRow(player: PlayerOnTableItem, isLast: Boolean, onExit: () -> Un
                 fontSize = 17.sp
             )
         }
-
         // Amount in Glow Gold
         Text(
             text = "₹${player.CoinEntry.toInt()}",
@@ -485,7 +532,8 @@ fun ActionButtons(gameStarted: Boolean,
 
 
 @Composable
-fun EarningsInput(winAmount: String, onAmountChange: (String) -> Unit, onSubmit: () -> Unit) {
+fun EarningsInput(winAmount: String, onAmountChange: (String) -> Unit, onSubmit: () -> Unit,
+                  onClose:()->Unit) {
     Spacer(modifier = Modifier.height(24.dp))
     // Glass Card Container to make the input visible against the red
     Card(
@@ -495,14 +543,29 @@ fun EarningsInput(winAmount: String, onAmountChange: (String) -> Unit, onSubmit:
         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f)) // Subtle outline
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text(
-                text = "SETTLE POT",
-                fontSize = 11.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = PokerGoldNeon,
-                letterSpacing = 2.sp,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "SETTLE POT",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = PokerGoldNeon,
+                    letterSpacing = 2.sp,
+                )
+                Text(
+                    text = "✕",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier
+                        .clickable { onClose() }
+                        .padding(6.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
                 value = winAmount,
                 onValueChange =  {
@@ -510,7 +573,7 @@ fun EarningsInput(winAmount: String, onAmountChange: (String) -> Unit, onSubmit:
                     if (it.all { char -> char.isDigit() }) {
                         onAmountChange(it)
                     }
-                } , //onAmountChange
+                } ,
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Enter Total Winning Pot", color = Color.White.copy(alpha = 0.3f)) },
                keyboardOptions = KeyboardOptions(
@@ -537,7 +600,6 @@ fun EarningsInput(winAmount: String, onAmountChange: (String) -> Unit, onSubmit:
                     .fillMaxWidth()
                     .height(60.dp)
                     .shadow(15.dp, RoundedCornerShape(16.dp), spotColor = Color.Black),
-                // Pure white button is the "loudest" contrast against red background
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.White,
                     contentColor = Color.Black
@@ -555,8 +617,8 @@ fun EmptyTablePlaceholder() {
         modifier = Modifier.fillMaxWidth().padding(60.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("THE TABLE IS DARK", color = Color.DarkGray, fontWeight = FontWeight.Bold, letterSpacing = 3.sp)
-        Text("Add players to light it up", color = Color.Gray, fontSize = 13.sp)
+        Text("THE TABLE IS DARK", color = PokerGoldNeon, fontWeight = FontWeight.Bold, letterSpacing = 3.sp)
+        Text("Add players to light it up", color = PokerGoldNeon, fontSize = 15.sp)
     }
 }
 
@@ -570,27 +632,15 @@ fun ExitDialog(player: PlayerOnTableItem,
 
     var remaining by remember {     mutableStateOf(player.CoinEntry.toInt().toString())
     }
-
-
-
     BasicAlertDialog(onDismissRequest = onDismiss) {
 
         Card(
 
             shape = RoundedCornerShape(32.dp),
-
-            // Changed from Black to a Deep Crimson Glass
-
             colors = CardDefaults.cardColors(containerColor = PokerDialogGlass),
-
-            // Vibrant Gold/White border to make it pop against the red background
-
             border = BorderStroke(
-
                 width = 2.dp,
-
                 brush = Brush.verticalGradient(
-
                     listOf(Color.White.copy(alpha = 0.5f), Color.Transparent)
 
                 )
@@ -657,6 +707,9 @@ fun ExitDialog(player: PlayerOnTableItem,
 
                         color = Color.White
 
+                    ),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number
                     ),
 
                     shape = RoundedCornerShape(16.dp),

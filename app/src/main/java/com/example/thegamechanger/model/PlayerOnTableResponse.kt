@@ -5,7 +5,6 @@ data class PlayerOnTableResponse(
     val Message: String,
     val Data: PlayerOnTableData?
 )
-
 data class PlayerOnTableData(
     val DealerTables: List<PlayerOnTableItem>,
     val DealerDashboard: List<DealerDashboardItem>
@@ -31,7 +30,10 @@ data class DealerDashboardItem(
     val DId: Int,
     val DealerName: String,
     val tbId: Int,
+    val Twid:Int,
+    val Game_Start_Time:String,
     val TableName: String,
+    val NetCommission:String,
     val EntryOnDate: String
 
 )

@@ -106,7 +106,6 @@ fun IntroScreen(
                 ),
             contentScale = androidx.compose.ui.layout.ContentScale.Fit
         )
-
         // 🔹 BOTTOM SECTION
         Column(
             modifier = Modifier

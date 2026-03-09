@@ -88,6 +88,7 @@ fun ManagerDashboard(
                 .statusBarsPadding()
                 .navigationBarsPadding()
                 .padding(horizontal = 20.dp)
+                .verticalScroll(rememberScrollState())
         ) {
             Spacer(modifier = Modifier.height(20.dp))
             Row(
@@ -112,7 +113,6 @@ fun ManagerDashboard(
                         fontWeight = FontWeight.Black
                     )
                 }
-
                 // Modern Ghost Button for Exit
                 OutlinedButton(
                     onClick = onLogout,
@@ -127,12 +127,12 @@ fun ManagerDashboard(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
+                    //.weight(1f)
                     .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(32.dp)),
                 shape = RoundedCornerShape(32.dp),
                 color = Color.Black.copy(alpha = 0.3f)
             ) {
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                Column() {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -163,7 +163,6 @@ fun ManagerDashboard(
                             textAlign = TextAlign.End
                         )
                     }
-
                     dealers.forEachIndexed { index, dealer ->
                         DealerRowPremium(
                             dealer = dealer,
@@ -175,10 +174,8 @@ fun ManagerDashboard(
                                     dealerId = dealerId,
                                     tableId = table.TbId
                                 )
-
-                            },
+                                       },
                             onStop = { dealerId, tableId, dtbId, coin ->
-
                                 viewModel.removeDealer(
                                     mId = 2,
                                     dealerId = dealerId,
@@ -186,7 +183,6 @@ fun ManagerDashboard(
                                     coin = coin,
                                     dtbId = dtbId
                                 )
-
                             }
                         )
                         if (index < dealers.lastIndex) {
@@ -233,7 +229,6 @@ fun ManagerDashboard(
         }
     }
     if (isLoading) {
-
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -455,31 +450,23 @@ fun DealerRowPremium(
             },
 
             text = {
-
                 Column {
-
                     Text(
                         "Commission Amount",
                         color = Color.White,
                         fontSize = 18.sp
                     )
-
                     Spacer(modifier = Modifier.height(10.dp))
-
                     Text(
                         text = "₹ ${dealer.Commission.toInt()}",
                         color = PokerGoldNeon,
                         fontSize = 26.sp,
                         fontWeight = FontWeight.Bold
                     )
-
                 }
             },
-
             confirmButton = {
-
                 Button(
-
                     onClick = {
                         onStop(
                             dealer.DId,
@@ -488,7 +475,6 @@ fun DealerRowPremium(
                             dealer.Commission.toInt()   // direct value
 
                         )
-
                         showStopDialog = false
                     },
 

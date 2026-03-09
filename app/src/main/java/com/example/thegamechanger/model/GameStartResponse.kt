@@ -12,6 +12,7 @@ data class GameStartData(
     val tbId: Int,
     val IsStart: Int,
     val WinningCoin: Double,
+    val NetCommission:Double,
     val Result_status: Int,
     val Msg: String
 )

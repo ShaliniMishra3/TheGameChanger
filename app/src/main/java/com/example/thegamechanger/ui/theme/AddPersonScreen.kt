@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,8 +16,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -25,6 +29,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -33,6 +38,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,6 +46,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.thegamechanger.UiState
@@ -49,8 +56,11 @@ import com.example.thegamechanger.viewmodel.GameViewModel
 @Composable
 fun AddPersonScreen(
     viewModel: GameViewModel,
+    gameStarted: Boolean,
     onBack: () -> Unit
 ) {
+    var snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     val playerState by viewModel.availablePlayers.collectAsState()
     val addState by viewModel.addPlayerState.collectAsState()
     var selectedPlayerId by remember { mutableStateOf<Int?>(null) }
@@ -145,30 +155,46 @@ fun AddPersonScreen(
             Spacer(modifier = Modifier.height(30.dp))
 
             // --- PLAYER LIST ---
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-
+            // Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(bottom = 60.dp)
+            ) {
                 when (playerState) {
-
                     is UiState.Loading -> {
-                        Text("Loading...", color = Color.White)
+                        item {
+                            Text("Loading...", color = Color.White)
+                        }
                     }
 
                     is UiState.Error -> {
-                        Text(
-                            text = (playerState as UiState.Error).message,
-                            color = Color.Red
-                        )
+                        item {
+                            Text(
+                                text = (playerState as UiState.Error).message,
+                                color = Color.Red
+                            )
+                        }
                     }
-
                     is UiState.Success<*> -> {
                         val players =
                             (playerState as UiState.Success<List<PlayerDto>>).data
-
-                        players.forEach { player ->
+                        items(players) { player ->
                             DealerRow(
                                 dealerName = player.Name,
                                 mobile = player.Mobile,
+                                gameStarted=gameStarted,
                                 onAddClick = {
+                                    if(gameStarted){
+                                        Toast.makeText(
+                                            context,
+                                            "Cannot add player while game is running",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        return@DealerRow
+                                    }
                                     if (tableId > 0) {
                                         haptic.performHapticFeedback(
                                             androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove
@@ -177,30 +203,24 @@ fun AddPersonScreen(
                                         selectedPlayerId = player.PId
                                         showDialog = true
                                     }else{
-                                       /* Toast.makeText(
-                                            context,
-                                            "Please assign a table to dealer first",
-                                            Toast.LENGTH_LONG
-                                        ).show()
 
-                                        */
                                         showWarningDialog=true
                                     }
                                 }
                             )
                         }
-
                         if (players.isEmpty()) {
-                            Text(
-                                text = "No players found.",
-                                color = Color.White.copy(alpha = 0.5f),
-                                modifier = Modifier
-                                    .align(Alignment.CenterHorizontally)
-                                    .padding(top = 40.dp)
-                            )
+                            item {
+                                Text(
+                                    text = "No players found.",
+                                    color = Color.White.copy(alpha = 0.5f),
+                                    modifier = Modifier
+                                        .align(Alignment.CenterHorizontally)
+                                        .padding(top = 40.dp)
+                                )
+                            }
                         }
                     }
-
                     else -> {}
                 }
             }
@@ -281,6 +301,7 @@ fun AddPersonScreen(
 fun DealerRow(
     dealerName: String,
     mobile: String,
+    gameStarted: Boolean,
     onAddClick: () -> Unit
 ) {
     Box(
@@ -288,7 +309,10 @@ fun DealerRow(
             .fillMaxWidth()
             .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(20.dp))
             .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(20.dp))
-            .clickable { onAddClick() }
+           .clickable {
+             onAddClick()
+           }
+
             .padding(20.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -369,6 +393,9 @@ fun AddPlayerDialog(
                         color = Color.White,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
+                    ),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number
                     ),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = PokerGoldNeon,

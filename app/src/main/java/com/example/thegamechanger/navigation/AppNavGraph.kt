@@ -22,6 +22,7 @@ import com.example.thegamechanger.ui.theme.ManagerDashboard
 @Composable
 fun AppNavGraph(){
     val gameViewModel: GameViewModel= viewModel()
+
     val navController = rememberNavController()
     val context=LocalContext.current
     val session= SessionManager(context)
@@ -121,16 +122,16 @@ fun AppNavGraph(){
 
             val dealerId =
                 backStackEntry.arguments?.getInt("dealerId") ?: 0
+            val gameStarted by gameViewModel.gameStarted   // ✅ FIX
 
             gameViewModel.setDealer(dealerId, "")
             // Load tableId from API
             LaunchedEffect(Unit) {
                 gameViewModel.fetchPlayerOnTable(dealerId)
             }
-
-
             AddPersonScreen(
                 viewModel = gameViewModel,
+                gameStarted = gameStarted,
                 onBack = { navController.popBackStack() }
             )
         }
