@@ -27,6 +27,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedTextField
@@ -81,8 +83,10 @@ fun MainScreen(
     dealerName: String,
     viewModel: GameViewModel,
     onAddPersonClick: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onChangePasswordClick:()->Unit
 ) {
+    var showMenu by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val players by viewModel.playersOnTable.collectAsState()
     val addState by viewModel.addPlayerState.collectAsState()
@@ -328,7 +332,6 @@ fun MainScreen(
                         viewModel.setGameStarted(false)
                         winAmount = ""
                         gameCompleted = false
-
                         viewModel.setGameStarted(false)
                     },
                     onClose = {
@@ -339,48 +342,126 @@ fun MainScreen(
             Spacer(modifier = Modifier.height(100.dp))
         }
 
-// 🔥 FIXED LOGOUT BUTTON
-
-
         if (!gameCompleted) {
-            Card(
-                shape = RoundedCornerShape(20.dp),
+            Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .navigationBarsPadding()
                     .padding(20.dp)
-                    .clickable {
+                    .navigationBarsPadding()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .shadow(12.dp, CircleShape)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color(0xFF2A0000), Color(0xFF420000))
+                            ),
+                            CircleShape
+                        )
+                        .border(
+                            1.dp,
+                            PokerGoldNeon.copy(alpha = 0.4f),
+                            CircleShape
+                        )
+                        .clickable { showMenu = true },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "⚙",
+                        fontSize = 22.sp,
+                        color = PokerGoldNeon
+                    )
+                }
+                 DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Change Password") },
+                        onClick = {
+                            showMenu = false
+                            onChangePasswordClick()
+                        }
+                    )
+
+                    DropdownMenuItem(
+                        text = { Text("Logout") },
+                        onClick = {
+                            showMenu = false
+                            val session = SessionManager(context)
+                            session.logout()
+                            onBack()
+                        }
+                    )
+                }
+            }
+          /*  Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)   // ⭐ important
+                    .padding(20.dp)
+                    .navigationBarsPadding()
+                    .shadow(12.dp, CircleShape)
+                    .size(56.dp)
+                    .shadow(12.dp, CircleShape)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color(0xFF2A0000), Color(0xFF420000))
+                        ),
+                        CircleShape
+                    )
+                    .border(
+                        1.dp,
+                        PokerGoldNeon.copy(alpha = 0.4f),
+                        CircleShape
+                    )
+                    .clickable { showMenu = true },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "⚙",
+                    fontSize = 22.sp,
+                    color = PokerGoldNeon
+                )
+            }
+
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Change Password") },
+                    onClick = {
+                        showMenu = false
+                        onChangePasswordClick()
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Logout") },
+                    onClick = {
+                        showMenu = false
                         val session = SessionManager(context)
                         session.logout()
                         onBack()
                     }
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 40.dp, vertical = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "LOGOUT",
-                        color = PokerGoldNeon,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
-                    )
-                }
+                )
             }
+
+
+           */
+
+
         }
 
     }
 
-
-}
+    }
 
     if (showExitDialog && selectedPlayer != null) {
         ExitDialog(
             player = selectedPlayer!!,
             onDismiss = { showExitDialog = false },
-
             onSubmit = { finalAmount ->
-
                 viewModel.addPlayerToTable(
                     dId = viewModel.dealerId.value,
                     pId = selectedPlayer!!.PId,   // ⚠ make sure Player has pId
@@ -425,16 +506,12 @@ fun PremiumTable(players: List<PlayerOnTableItem>,
                 Text("BANKROLL", Modifier.weight(1f), color = PokerGold.copy(alpha = 0.7f), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center)
                 Text("ACTION", Modifier.weight(0.8f), color = PokerGold.copy(alpha = 0.7f), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.End)
             }
-
             players.forEachIndexed { index, player ->
                 PremiumTableRow(player, index == players.lastIndex) { onExitClick(player) }
             }
         }
     }
 }
-
-
-
 @Composable
 fun PremiumTableRow(player: PlayerOnTableItem, isLast: Boolean, onExit: () -> Unit) {
     Row(
@@ -489,7 +566,6 @@ fun PremiumTableRow(player: PlayerOnTableItem, isLast: Boolean, onExit: () -> Un
         )
     }
 }
-
 @Composable
 fun ActionButtons(gameStarted: Boolean,
                   isSettling:Boolean,
@@ -499,7 +575,6 @@ fun ActionButtons(gameStarted: Boolean,
         Button(
             onClick = onStart,
             enabled = playerCount >= 2 && !gameStarted && !isSettling,
-           // enabled = !gameStarted && !isSettling && playerCount >= 2,
             modifier = Modifier.weight(1f).height(65.dp),
             shape = RoundedCornerShape(22.dp),
             colors = ButtonDefaults.buttonColors(
@@ -535,7 +610,6 @@ fun ActionButtons(gameStarted: Boolean,
 fun EarningsInput(winAmount: String, onAmountChange: (String) -> Unit, onSubmit: () -> Unit,
                   onClose:()->Unit) {
     Spacer(modifier = Modifier.height(24.dp))
-    // Glass Card Container to make the input visible against the red
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
@@ -569,7 +643,6 @@ fun EarningsInput(winAmount: String, onAmountChange: (String) -> Unit, onSubmit:
             OutlinedTextField(
                 value = winAmount,
                 onValueChange =  {
-                    // Allow only numbers
                     if (it.all { char -> char.isDigit() }) {
                         onAmountChange(it)
                     }
@@ -692,50 +765,32 @@ fun ExitDialog(player: PlayerOnTableItem,
                 }
                 Spacer(modifier = Modifier.height(20.dp))
                 OutlinedTextField(
-
                     value = remaining,
-
                     onValueChange = { remaining = it },
-
                     label = { Text("Final Chip Count", color = Color.White.copy(alpha = 0.6f)) },
-
                     textStyle = androidx.compose.ui.text.TextStyle(
-
                         fontSize = 24.sp,
-
                         fontWeight = FontWeight.Bold,
-
                         color = Color.White
 
                     ),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number
                     ),
-
                     shape = RoundedCornerShape(16.dp),
-
                     colors = OutlinedTextFieldDefaults.colors(
-
                         focusedBorderColor = Color.White,
-
                         unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
-
                         focusedContainerColor = Color.Black.copy(alpha = 0.2f),
-
                         unfocusedContainerColor = Color.Black.copy(alpha = 0.1f)
 
                     ),
-
                     modifier = Modifier.fillMaxWidth()
-
                 )
                 Spacer(modifier = Modifier.height(30.dp))
                 Row(
-
                     modifier = Modifier.fillMaxWidth(),
-
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
-
                     verticalAlignment = Alignment.CenterVertically
 
                 ) {

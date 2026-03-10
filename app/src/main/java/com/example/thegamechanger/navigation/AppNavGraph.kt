@@ -18,6 +18,7 @@ import com.example.thegamechanger.ui.theme.LoginScreen
 import com.example.thegamechanger.ui.theme.MainScreen
 import com.example.thegamechanger.viewmodel.GameViewModel
 import com.example.thegamechanger.ui.theme.ManagerDashboard
+import com.example.thegamechanger.viewmodel.ChangePasswordScreen
 
 @Composable
 fun AppNavGraph(){
@@ -76,7 +77,6 @@ fun AppNavGraph(){
                 }
             )
         }
-
         composable(
             "main/{dealerId}/{dealerName}",
             arguments = listOf(
@@ -84,14 +84,10 @@ fun AppNavGraph(){
                 navArgument("dealerName") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-
             val dealerId = backStackEntry.arguments?.getInt("dealerId") ?: 0
             val dealerName = backStackEntry.arguments?.getString("dealerName") ?: ""
             val tableId by gameViewModel.tableId   // ✅ FIX
-
             gameViewModel.setDealer(dealerId, dealerName)
-
-            // 🔥 Load table players when MainScreen opens
             LaunchedEffect(Unit) {
                 gameViewModel.fetchPlayerOnTable(dealerId)
             }
@@ -103,14 +99,19 @@ fun AppNavGraph(){
                     navController.navigate("add_person/$dealerId")  },
                 onBack = {
                     navController.navigate("login") {
-                       // popUpTo("main/$dealerId/$dealerName") { inclusive = true }
                         popUpTo(0) { inclusive = true }
-
                     }
+                },
+                onChangePasswordClick = {
+                    navController.navigate("changePassword")
                 }
             )
         }
-
+        composable("changePassword") {
+            ChangePasswordScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
         composable(
             "add_person/{dealerId}",
             arguments = listOf(
@@ -119,13 +120,10 @@ fun AppNavGraph(){
                 }
             )
         ) { backStackEntry ->
-
             val dealerId =
                 backStackEntry.arguments?.getInt("dealerId") ?: 0
             val gameStarted by gameViewModel.gameStarted   // ✅ FIX
-
             gameViewModel.setDealer(dealerId, "")
-            // Load tableId from API
             LaunchedEffect(Unit) {
                 gameViewModel.fetchPlayerOnTable(dealerId)
             }
