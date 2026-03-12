@@ -52,7 +52,6 @@ class GameViewModel @Inject constructor(
     fun setGameStarted(started: Boolean) {
         _gameStarted.value = started
     }
-
     fun clearGameState() {
         _gameState.value = UiState.Idle
     }

@@ -4,6 +4,10 @@ import com.example.thegamechanger.model.AddDealerOnResponse
 import com.example.thegamechanger.model.AddDealerOnTableRequest
 import com.example.thegamechanger.model.AddPlayerTableRequest
 import com.example.thegamechanger.model.AddPlayerTableResponse
+import com.example.thegamechanger.model.AppVersionRequest
+import com.example.thegamechanger.model.AppVersionResponse
+import com.example.thegamechanger.model.ChangePasswordApiResponse
+import com.example.thegamechanger.model.ChangePasswordRequest
 import com.example.thegamechanger.model.DealerOnTableRequest
 import com.example.thegamechanger.model.DealerOnTableResponse
 import com.example.thegamechanger.model.GameStartRequest
@@ -56,4 +60,14 @@ interface DealerApiLogin {
     suspend fun addDealerOnTable(
         @Body request: AddDealerOnTableRequest
     ): AddDealerOnResponse
+
+    @POST("api/Common/ChangePassword")
+    suspend fun changePassword(
+        @Body request: ChangePasswordRequest
+    ):Response<ChangePasswordApiResponse>
+
+    @POST("api/Common/AppVersion")
+    suspend fun getAppVersion(
+        @Body request: AppVersionRequest
+    ): Response<AppVersionResponse>
 }

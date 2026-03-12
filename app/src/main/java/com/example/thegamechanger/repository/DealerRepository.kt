@@ -3,6 +3,11 @@ package com.example.thegamechanger.repository
 import com.example.thegamechanger.UiState
 import com.example.thegamechanger.model.AddPlayerTableRequest
 import com.example.thegamechanger.model.AddPlayerTableResponse
+import com.example.thegamechanger.model.AppVersionRequest
+import com.example.thegamechanger.model.AppVersionWrapper
+import com.example.thegamechanger.model.ChangePasswordApiResponse
+import com.example.thegamechanger.model.ChangePasswordDataWrapper
+import com.example.thegamechanger.model.ChangePasswordRequest
 import com.example.thegamechanger.model.GameStartRequest
 import com.example.thegamechanger.model.GameStartResponse
 import com.example.thegamechanger.model.LoginRequest
@@ -12,6 +17,7 @@ import com.example.thegamechanger.model.PlayerOnTableItem
 import com.example.thegamechanger.model.PlayerOnTableRequest
 import com.example.thegamechanger.model.PlayerOnTableResponse
 import com.example.thegamechanger.remote.DealerApiLogin
+import com.google.gson.Gson
 import retrofit2.Response
 import javax.inject.Inject
 
@@ -81,24 +87,13 @@ class DealerRepository @Inject constructor(
             UiState.Error(e.message ?: "Network Error")
 
         }
-           /* if (response.isSuccessful && response.body()?.Success == true) {
-                UiState.Success(response.body()?.Data?.data ?: emptyList())
-            } else {
-                UiState.Error(response.body()?.Message ?: "Something went wrong")
-            }
 
-        } catch (e: Exception) {
-            UiState.Error(e.message ?: "Network Error")
-        }
-
-            */
     }
     suspend fun addPlayerToTable(
         request: AddPlayerTableRequest
     ): Response<AddPlayerTableResponse> {
         return dealerApi.addPlayerToTable(request)
     }
-
     suspend fun gameStart(request: GameStartRequest): UiState<GameStartResponse> {
         return try {
             val response = dealerApi.gameStart(request)
@@ -107,4 +102,59 @@ class DealerRepository @Inject constructor(
             UiState.Error(e.message ?: "Game API Error")
         }
     }
+    suspend fun changePassword(request: ChangePasswordRequest): UiState<ChangePasswordApiResponse> {
+        return try {
+
+            val response = dealerApi.changePassword(request)
+
+            if (response.isSuccessful && response.body() != null) {
+
+                UiState.Success(response.body()!!)
+
+            } else {
+
+                UiState.Error(response.message())
+
+            }
+
+        } catch (e: Exception) {
+
+            UiState.Error(e.message ?: "Something went wrong")
+
+        }
+    }
+    suspend fun getAppVersion(version: String): UiState<String> {
+        return try {
+
+            val response = dealerApi.getAppVersion(
+                AppVersionRequest(version)
+            )
+
+            if (response.isSuccessful && response.body() != null) {
+
+                val gson = Gson()
+
+                val parsed = gson.fromJson(
+                    response.body()!!.Data,
+                    AppVersionWrapper::class.java
+                )
+
+                val message = parsed.data.firstOrNull()?.message ?: ""
+
+                UiState.Success(message)
+
+            } else {
+
+                UiState.Error("Version API failed")
+
+            }
+
+        } catch (e: Exception) {
+
+            UiState.Error(e.message ?: "Unknown error")
+
+        }
+    }
+
+
 }

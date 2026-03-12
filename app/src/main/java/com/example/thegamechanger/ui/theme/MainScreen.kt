@@ -396,59 +396,7 @@ fun MainScreen(
                     )
                 }
             }
-          /*  Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)   // ⭐ important
-                    .padding(20.dp)
-                    .navigationBarsPadding()
-                    .shadow(12.dp, CircleShape)
-                    .size(56.dp)
-                    .shadow(12.dp, CircleShape)
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(Color(0xFF2A0000), Color(0xFF420000))
-                        ),
-                        CircleShape
-                    )
-                    .border(
-                        1.dp,
-                        PokerGoldNeon.copy(alpha = 0.4f),
-                        CircleShape
-                    )
-                    .clickable { showMenu = true },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "⚙",
-                    fontSize = 22.sp,
-                    color = PokerGoldNeon
-                )
-            }
 
-            DropdownMenu(
-                expanded = showMenu,
-                onDismissRequest = { showMenu = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text("Change Password") },
-                    onClick = {
-                        showMenu = false
-                        onChangePasswordClick()
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("Logout") },
-                    onClick = {
-                        showMenu = false
-                        val session = SessionManager(context)
-                        session.logout()
-                        onBack()
-                    }
-                )
-            }
-
-
-           */
 
 
         }

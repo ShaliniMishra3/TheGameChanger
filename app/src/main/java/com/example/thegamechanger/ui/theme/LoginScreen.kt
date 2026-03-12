@@ -68,6 +68,7 @@ fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
     onLoginSuccess: (Int, String, Boolean) -> Unit
 ) {
+    val versionMessage by viewModel.appVersion.collectAsState()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var selectedRole by remember { mutableStateOf("Dealer") }
@@ -77,6 +78,12 @@ fun LoginScreen(
     val navigateToManager by viewModel.navigateToManager.collectAsState()
     val context = LocalContext.current
     val session = SessionManager(context)
+    val appVersion = "2.1"
+
+    LaunchedEffect(Unit) {
+        viewModel.checkAppVersion(appVersion)
+    }
+
 
     LaunchedEffect(navigateToMain, navigateToManager) {
         navigateToMain?.let { (dealerId, dealerName) ->
@@ -93,19 +100,6 @@ fun LoginScreen(
             onLoginSuccess(0, "", false)
             viewModel.resetNavigation()
         }
-
-       /* navigateToMain?.let { (dealerId, dealerName) ->
-            onLoginSuccess(dealerId,dealerName,true) // Dealer
-            viewModel.resetNavigation()
-        }
-
-       if (navigateToManager == true) {
-            onLoginSuccess(0,"",false) // Manager
-            viewModel.resetNavigation()
-        }
-
-        */
-
     }
     val focusManager = LocalFocusManager.current
     Box(
@@ -305,7 +299,28 @@ fun LoginScreen(
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold
             )
+            versionMessage?.let {
+                Spacer(modifier = Modifier.height(14.dp))
+                Box(
+                    modifier = Modifier
+                        .border(
+                            width = 1.dp,
+                            color = PokerGoldNeon,
+                            shape = RoundedCornerShape(50)
+                        )
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = "Version: $appVersion",
+                        color = PokerGoldNeon,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
         }
+
     }
 }
 

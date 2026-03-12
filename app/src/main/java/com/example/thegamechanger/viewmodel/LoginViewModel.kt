@@ -22,24 +22,36 @@ class LoginViewModel @Inject constructor(
 ) : ViewModel() {
     val _navigateToMain = MutableStateFlow<Pair<Int, String>?>(null)
     val navigateToMain: StateFlow<Pair<Int, String>?> = _navigateToMain
-
-
     private val _loginState =
         MutableStateFlow<UiState<LoginResponse>>(UiState.Idle)
     val loginState = _loginState.asStateFlow()
-
     private val _navigateToManager = MutableStateFlow<Boolean?>(null)
     val navigateToManager = _navigateToManager.asStateFlow()
+
+    private val _appVersion = MutableStateFlow<String?>(null)
+    val appVersion: StateFlow<String?> = _appVersion
+
+    fun checkAppVersion(version:String) {
+
+        viewModelScope.launch {
+
+            val result = repository.getAppVersion("2.5")
+
+            if (result is UiState.Success) {
+                _appVersion.value = result.data
+            }
+
+        }
+
+    }
     fun login(email: String, password: String, role: String) {
       viewModelScope.launch {
           _loginState.value = UiState.Loading
-
           val result = if (role == "Manager") {
               repository.managerLogin(LoginRequest(email, password))
           } else {
               repository.login(LoginRequest(email, password))
           }
-
           when (result) {
               is UiState.Success -> {
                   val response = result.data

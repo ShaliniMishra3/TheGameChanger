@@ -44,13 +44,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.thegamechanger.R
+import com.example.thegamechanger.UiState
+import com.example.thegamechanger.model.LoginResponse
 import com.example.thegamechanger.ui.theme.PokerCrimsonBottom
 import com.example.thegamechanger.ui.theme.PokerCrimsonTop
+import com.example.thegamechanger.ui.theme.PokerGoldDark
 
 @Composable
 fun ChangePasswordScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    viewModel: ChangePasswordViewModel= hiltViewModel()
 ) {
 
     var email by remember { mutableStateOf("") }
@@ -59,9 +65,8 @@ fun ChangePasswordScreen(
     var tpID by remember { mutableStateOf("") }
     var oldPasswordVisible by remember { mutableStateOf(false) }
     var newPasswordVisible by remember { mutableStateOf(false) }
-
     val focusManager = LocalFocusManager.current
-
+    val changeState by viewModel.changePasswordState.collectAsState()
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -218,7 +223,6 @@ fun ChangePasswordScreen(
                         onValueChange = { newPassword = it },
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("New Password", color = Color.White.copy(alpha = 0.5f)) },
-                        //visualTransformation = PasswordVisualTransformation(),
                         visualTransformation =
                             if (newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
@@ -242,7 +246,6 @@ fun ChangePasswordScreen(
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
-
                     OutlinedTextField(
                         value = tpID,
                         onValueChange = { tpID = it },
@@ -259,11 +262,16 @@ fun ChangePasswordScreen(
                             unfocusedTextColor = Color.White
                         )
                     )
-
                     Spacer(modifier = Modifier.height(30.dp))
-
                     Button(
-                        onClick = { },
+                        onClick = {
+                            viewModel.changePassword(
+                                email = email,
+                                oldPassword = oldPassword,
+                                newPassword = newPassword,
+                                tp = tpID
+                            )
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(64.dp)
@@ -280,66 +288,30 @@ fun ChangePasswordScreen(
                             fontWeight = FontWeight.Black
                         )
                     }
+                    when (changeState) {
+                        is UiState.Loading -> {
+                            Text(
+                                text = "Please wait...",
+                                color = Color.White
+                            )
+                        }
+                        is UiState.Success -> {
+                            Text(
+                                text = (changeState as UiState.Success<String>).data,
+                                color = PokerGoldNeon
+                            )
+                        }
+                        is UiState.Error -> {
+                            Text(
+                                text = (changeState as UiState.Error).message ?: "",
+                                color = Color.White
+                            )
+                        }
+                        else -> {}
+                    }
                 }
             }
         }
     }
 }
 
-
-
-/*@Composable
-fun ChangePasswordScreen(
-    onBack:()->Unit
-) {
-    var oldPassword by remember { mutableStateOf("") }
-    var newPassword by remember { mutableStateOf("") }
-    var emailId by remember {mutableStateOf("") }
-    var tpID by remember { mutableStateOf("") }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(20.dp),
-        verticalArrangement = Arrangement.Center
-    ) {
-        OutlinedTextField(
-            value= emailId,
-            onValueChange = { oldPassword=it },
-            label = { Text ("Email ID")},
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value=oldPassword,
-            onValueChange = {newPassword=it},
-            label={Text("Old Password")},
-            modifier=Modifier.fillMaxWidth()
-        )
-        Spacer(modifier= Modifier.height(20.dp))
-        OutlinedTextField(
-            value = newPassword,
-            onValueChange = { newPassword=it },
-            label = {Text("New Password")},
-            modifier= Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(20.dp))
-        OutlinedTextField(
-            value=tpID,
-            onValueChange = {tpID=it},
-            label={Text("TpID")},
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Button(
-            onClick={ },
-            modifier= Modifier.fillMaxWidth()
-        ){
-            Text("Update Password")
-        }
-    }
-}
-
- */
